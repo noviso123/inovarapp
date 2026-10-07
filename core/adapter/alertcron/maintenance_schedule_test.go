@@ -14,22 +14,19 @@ import (
 func TestFutureMaintenanceIsPersistedAtNineInBrasilia(t *testing.T) {
 	var queued map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/rest/v1/whatsapp_message_queue" {
+		if r.URL.Path != "/rest/v1/rpc/schedule_maintenance_whatsapp" {
 			t.Errorf("unexpected path %s", r.URL.Path)
 			w.WriteHeader(404)
 			return
 		}
-		if r.Method == http.MethodPatch {
-			if r.URL.Query().Get("metadata->>proxima_manutencao") != "neq.2027-01-07" {
-				t.Errorf("wrong superseded cycle filter: %s", r.URL)
-			}
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		if r.URL.Query().Get("on_conflict") != "idempotency_key" || r.Header.Get("Prefer") != "resolution=ignore-duplicates,return=minimal" {
+		if r.Header.Get("Prefer") != "resolution=ignore-duplicates,return=minimal" {
 			t.Error("missing duplicate prevention")
 		}
-		_ = json.NewDecoder(r.Body).Decode(&queued)
+		var input struct {
+			Payload map[string]any `json:"p_payload"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&input)
+		queued = input.Payload
 		w.WriteHeader(http.StatusCreated)
 	}))
 	defer server.Close()
