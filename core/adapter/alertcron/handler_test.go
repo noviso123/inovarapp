@@ -70,7 +70,7 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 	var queuedWhats []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/rest/v1/whatsapp_message_queue":
+		case "/rest/v1/whatsapp_message_queue", "/rest/v1/rpc/schedule_maintenance_whatsapp":
 			if r.Method == http.MethodPatch {
 				w.WriteHeader(http.StatusNoContent)
 				return
@@ -78,6 +78,9 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 			var message map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
 				t.Error(err)
+			}
+			if payload, ok := message["p_payload"].(map[string]any); ok {
+				message = payload
 			}
 			queuedWhats = append(queuedWhats, fmt.Sprint(message["recipient_phone"])+"|"+fmt.Sprint(message["message_text"]))
 			w.WriteHeader(http.StatusCreated)
