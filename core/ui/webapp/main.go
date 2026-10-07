@@ -453,15 +453,15 @@ func registerAPIHandlers(mux *http.ServeMux) {
 	mux.Handle("/api/portal/cliente", httpapi.CustomerPortalHandler{Supabase: accountsClient})
 	mux.Handle("/api/cliente/perfil", httpapi.CustomerProfileHandler{Supabase: accountsClient})
 	mux.Handle("/api/cliente/aparelhos", httpapi.CustomerAppliancesHandler{Supabase: accountsClient})
-	mux.Handle("/api/servicos", httpapi.ServicesHandler{Supabase: accountsClient})
+	mux.Handle("/api/servicos", httpapi.ServicesHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/api/clientes", httpapi.CustomersHandler{Supabase: accountsClient})
 	mux.Handle("/api/orcamentos", httpapi.TeamBudgetsHandler{Supabase: accountsClient})
 	mux.Handle("/api/orcamento-equipe", httpapi.TeamBudgetMutationHandler{Supabase: accountsClient})
 	mux.Handle("/api/aparelhos", httpapi.TeamAppliancesHandler{Supabase: accountsClient})
 	mux.Handle("/api/cliente/servicos", httpapi.CustomerServicesHandler{Supabase: accountsClient, Notifier: teamPushNotifier})
 	mux.Handle("/api/agendamentos", httpapi.AppointmentsHandler{Supabase: accountsClient})
-	mux.Handle("/api/historico", httpapi.ServiceHistoryHandler{Supabase: accountsClient})
-	mux.Handle("/api/aparelho-manutencao", httpapi.ApplianceMaintenanceHandler{Supabase: accountsClient})
+	mux.Handle("/api/historico", httpapi.ServiceHistoryHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
+	mux.Handle("/api/aparelho-manutencao", httpapi.ApplianceMaintenanceHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/api/os-pdf", httpapi.ServiceOrderPDFHandler{
 		Supabase: accountsClient, WhatsApp: whatsapp.Sender{}, WhatsAppDefaults: serverWhatsAppConfig(),
 	})
@@ -470,7 +470,7 @@ func registerAPIHandlers(mux *http.ServeMux) {
 	mux.Handle("/api/documentos", httpapi.DocumentsHandler{Supabase: accountsClient})
 	mux.Handle("/api/notificacoes", httpapi.NotificationsHandler{Supabase: accountsClient, AndroidSender: androidPushSender, IOSSender: iosPushSender, Sender: webPushSender})
 	mux.Handle("/api/whatsapp", httpapi.WhatsAppHandler{Supabase: accountsClient, Sender: whatsapp.Sender{}, Defaults: serverWhatsAppConfig()})
-	mux.Handle("/api/whatsapp/fila", whatsappqueue.HTTPHandler{Supabase: accountsClient})
+	mux.Handle("/api/whatsapp/fila", whatsappqueue.HTTPHandler{Supabase: accountsClient, SyncMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/d/", httpapi.ShortDocumentHandler{Supabase: accountsClient})
 	mux.HandleFunc("/api/calendario-ics", func(w http.ResponseWriter, r *http.Request) {
 		client, err := serverSupabaseClient()
