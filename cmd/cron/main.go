@@ -34,7 +34,7 @@ func main() {
 	}
 	worker := alertcron.Handler{
 		Supabase:         client,
-		Months:           envInt("ALERTA_MESES", 6),
+		Months:           envInt("ALERTA_MESES", 3),
 		MaxLateDays:      envInt("ALERTA_MAX_ATRASO_DIAS", 180),
 		WhatsAppDefaults: whatsapp.Config{ProprioURL: env("WHATSAPP_OWN_URL"), ProprioToken: env("WHATSAPP_OWN_TOKEN"), ProprioSession: envDefault("WHATSAPP_OWN_SESSION", "inovar")},
 		EmailDefaults:    mailadapter.Config{APIKey: env("EMAIL_API_KEY"), From: env("EMAIL_FROM"), Username: env("EMAIL_GMAIL_USER"), Password: env("EMAIL_GMAIL_PASS")},
@@ -105,3 +105,4 @@ func loadLocalEnv() {
 		_ = file.Close()
 	}
 }
+
