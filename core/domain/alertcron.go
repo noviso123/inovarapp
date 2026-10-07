@@ -39,6 +39,16 @@ func BuildPreventiveAlerts(customers []AlertCustomer, appliances []AlertApplianc
 // BuildPreventiveAlertsWithDefault uses the technician's configured interval as
 // a fallback and honors a return date explicitly saved on a completed service.
 func BuildPreventiveAlertsWithDefault(customers []AlertCustomer, appliances []AlertAppliance, history []AlertHistory, services []AlertService, months, maxLateDays int, now time.Time) []PreventiveAlert {
+	return buildPreventiveCycles(customers, appliances, history, services, months, maxLateDays, now, false)
+}
+
+// BuildPreventiveSchedules includes future cycles so reminders can be persisted
+// immediately, rather than appearing only when maintenance is nearly due.
+func BuildPreventiveSchedules(customers []AlertCustomer, appliances []AlertAppliance, history []AlertHistory, services []AlertService, months, maxLateDays int, now time.Time) []PreventiveAlert {
+	return buildPreventiveCycles(customers, appliances, history, services, months, maxLateDays, now, true)
+}
+
+func buildPreventiveCycles(customers []AlertCustomer, appliances []AlertAppliance, history []AlertHistory, services []AlertService, months, maxLateDays int, now time.Time, includeFuture bool) []PreventiveAlert {
 	if months <= 0 {
 		months = 3
 	}
@@ -108,7 +118,7 @@ func BuildPreventiveAlertsWithDefault(customers []AlertCustomer, appliances []Al
 			}
 		}
 		days := int(math.Floor(expected.Sub(today).Hours()/24 + 0.5))
-		if days > 5 || days < -maxLateDays {
+		if (!includeFuture && days > 5) || days < -maxLateDays {
 			continue
 		}
 		returnMonths := monthsBetween(date, expected)
@@ -204,4 +214,3 @@ func nonEmptyAlertParts(parts ...string) []string {
 	}
 	return out
 }
-
