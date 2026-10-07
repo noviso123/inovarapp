@@ -439,7 +439,7 @@ func registerAPIHandlers(mux *http.ServeMux) {
 	}})
 	cronHandler := alertcron.Handler{
 		Supabase: accountsClient, Secret: configuredValue("CRON_SECRET"),
-		Months: configuredInt("ALERTA_MESES", 6), MaxLateDays: configuredInt("ALERTA_MAX_ATRASO_DIAS", 180),
+		Months: configuredInt("ALERTA_MESES", 3), MaxLateDays: configuredInt("ALERTA_MAX_ATRASO_DIAS", 180),
 		WhatsAppDefaults: serverWhatsAppConfig(),
 		QueueSender:      whatsapp.Sender{},
 		EmailDefaults:    mailadapter.Config{APIKey: configuredValue("EMAIL_API_KEY"), From: configuredValue("EMAIL_FROM"), Username: configuredValue("EMAIL_GMAIL_USER"), Password: configuredValue("EMAIL_GMAIL_PASS"), GoogleClientID: configuredValue("GOOGLE_CLIENT_ID"), GoogleClientSecret: configuredValue("GOOGLE_CLIENT_SECRET")},
