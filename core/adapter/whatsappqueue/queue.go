@@ -187,6 +187,7 @@ func CancelPendingBySource(ctx context.Context, db *supabase.Client, sourceType,
 
 type ProcessResult struct {
 	Claimed              int  `json:"claimed"`
+	Skipped              int  `json:"skipped"`
 	Sent                 int  `json:"sent"`
 	Retried              int  `json:"retried"`
 	Expired              int  `json:"expired"`
@@ -230,6 +231,9 @@ func ProcessDue(ctx context.Context, db *supabase.Client, sender whatsapp.Sender
 		return processed, nil
 	}
 	for _, message := range messages {
+		if message.Status != "processando" {
+			continue
+		}
 		if message.ExpiresAt != nil && !message.ExpiresAt.After(now) {
 			if _, err := recordAttempt(ctx, db, message, "falha", "mensagem expirou antes do envio", now, now, time.Time{}); err != nil {
 				return processed, err
@@ -238,7 +242,14 @@ func ProcessDue(ctx context.Context, db *supabase.Client, sender whatsapp.Sender
 			continue
 		}
 		attemptAt := now.UTC()
-		deliveryError := sendMessage(ctx, db, sender, config, message)
+		valid, deliveryError := validateReminder(ctx, db, message)
+		if deliveryError == nil && !valid {
+			processed.Skipped++
+			continue
+		}
+		if deliveryError == nil {
+			deliveryError = sendMessage(ctx, db, sender, config, message)
+		}
 		if deliveryError == nil {
 			finishedAt := time.Now().UTC()
 			status, err := recordAttempt(ctx, db, message, "enviado", "", attemptAt, finishedAt, time.Time{})
@@ -263,6 +274,26 @@ func ProcessDue(ctx context.Context, db *supabase.Client, sender whatsapp.Sender
 		}
 	}
 	return processed, nil
+}
+
+func validateReminder(ctx context.Context, db *supabase.Client, message Message) (bool, error) {
+	switch message.EventType {
+	case "lembrete_manutencao_recorrente", "lembrete_agendamento_vespera", "lembrete_agendamento_uma_hora":
+	default:
+		return true, nil
+	}
+	result, err := db.ServiceRequest(ctx, "/rest/v1/rpc/validate_whatsapp_reminder", supabase.RequestOptions{
+		Method: http.MethodPost,
+		Body:   map[string]any{"p_message_id": message.ID, "p_attempt_number": message.AttemptCount},
+	})
+	if err != nil || result.StatusCode < 200 || result.StatusCode >= 300 {
+		return false, errors.New("não foi possível validar o lembrete antes do envio; será tentado novamente")
+	}
+	var valid bool
+	if json.Unmarshal(result.Body, &valid) != nil {
+		return false, errors.New("resposta inválida ao validar o lembrete; será tentado novamente")
+	}
+	return valid, nil
 }
 
 func sendMessage(ctx context.Context, db *supabase.Client, sender whatsapp.Sender, config whatsapp.Config, message Message) error {
