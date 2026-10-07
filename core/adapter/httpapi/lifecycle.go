@@ -8,12 +8,14 @@ import (
 	"github.com/google/uuid"
 
 	"inovarapp/core/adapter/supabase"
-	"inovarapp/core/adapter/whatsappqueue"
 )
 
 // ServiceHistoryHandler exposes the technical history under the signed-in
 // team's JWT so the project's Supabase RLS policies remain authoritative.
-type ServiceHistoryHandler struct{ Supabase *supabase.Client }
+type ServiceHistoryHandler struct {
+	Supabase            *supabase.Client
+	ScheduleMaintenance MaintenanceScheduler
+}
 
 var serviceHistoryFields = map[string]bool{
 	"service_id": true, "cliente_id": true, "aparelho_id": true, "data": true,
@@ -77,12 +79,12 @@ func (h ServiceHistoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		}
 		if r.URL.Query().Get("retroativo") == "1" {
 			if forwardUserResource(w, r, h.Supabase, "/rest/v1/services", http.MethodPost, fields, "return=representation", true) {
-				_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "aparelho", rawFieldString(fields, "aparelho_id"), "Manutenção registrada; lembrete do ciclo anterior cancelado")
+				syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
 			}
 			return
 		}
 		if forwardUserResource(w, r, h.Supabase, "/rest/v1/service_history", http.MethodPost, fields, "return=representation", true) {
-			_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "aparelho", rawFieldString(fields, "aparelho_id"), "Manutenção registrada; lembrete do ciclo anterior cancelado")
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
 		}
 	case http.MethodDelete:
 		if !isTeamRole(caller.Role) {
@@ -101,7 +103,9 @@ func (h ServiceHistoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 			writeResourceJSON(w, http.StatusBadRequest, map[string]string{"error": "Identificador do histórico inválido"})
 			return
 		}
-		forwardUserResource(w, r, h.Supabase, resourceByID("service_history", "id", mutation.ID), http.MethodDelete, nil, "return=minimal", false)
+		if forwardUserResource(w, r, h.Supabase, resourceByID("service_history", "id", mutation.ID), http.MethodDelete, nil, "return=minimal", false) {
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
+		}
 	default:
 		writeResourceJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Método não permitido"})
 	}
@@ -110,7 +114,10 @@ func (h ServiceHistoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 // ApplianceMaintenanceHandler updates only the last-maintenance date. Keeping
 // the field allowlist narrow prevents this lifecycle action from editing a
 // customer's appliance profile accidentally.
-type ApplianceMaintenanceHandler struct{ Supabase *supabase.Client }
+type ApplianceMaintenanceHandler struct {
+	Supabase            *supabase.Client
+	ScheduleMaintenance MaintenanceScheduler
+}
 
 func (h ApplianceMaintenanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch && r.Method != http.MethodPut {
@@ -135,7 +142,7 @@ func (h ApplianceMaintenanceHandler) ServeHTTP(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if forwardUserResource(w, r, h.Supabase, resourceByID("air_conditioners", "id", mutation.ID), http.MethodPatch, mutation.Fields, "return=minimal", false) {
-		_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "aparelho", mutation.ID, "Data de manutenção atualizada; lembrete do ciclo anterior cancelado")
+		syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
 	}
 }
 
