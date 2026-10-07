@@ -105,8 +105,13 @@ func Enqueue(ctx context.Context, db *supabase.Client, input EnqueueInput) error
 		"metadata":              metadata,
 	}
 	path := tablePath + "?on_conflict=idempotency_key"
+	var requestBody any = payload
+	if input.EventType == "lembrete_manutencao_recorrente" {
+		path = "/rest/v1/rpc/schedule_maintenance_whatsapp"
+		requestBody = map[string]any{"p_payload": payload}
+	}
 	result, err := db.ServiceRequest(ctx, path, supabase.RequestOptions{
-		Method: http.MethodPost, Body: payload,
+		Method: http.MethodPost, Body: requestBody,
 		Prefer: "resolution=ignore-duplicates,return=minimal",
 	})
 	if err != nil {
