@@ -314,7 +314,13 @@ func (c *Client) UpdatePasswordWithMetadata(ctx context.Context, accessToken, pa
 }
 
 func (c *Client) publicAuthRequest(ctx context.Context, path string, options RequestOptions) (Result, error) {
-	result, err := c.do(ctx, c.anonKey, c.anonKey, path, withAuthAPIVersion(options))
+	// New publishable API keys are not JWTs. Send them only in apikey; legacy
+	// anon keys are JWTs and remain valid as the public Auth bearer token.
+	bearer := c.anonKey
+	if strings.HasPrefix(strings.TrimSpace(bearer), "sb_publishable_") {
+		bearer = ""
+	}
+	result, err := c.do(ctx, c.anonKey, bearer, path, withAuthAPIVersion(options))
 	if err != nil {
 		return Result{}, err
 	}
@@ -478,3 +484,4 @@ func mergeRawJSONFields(current, previous map[string]json.RawMessage) map[string
 	}
 	return merged
 }
+
