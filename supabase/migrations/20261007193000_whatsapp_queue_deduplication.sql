@@ -81,6 +81,25 @@ begin
   if exists (select 1 from public.whatsapp_delivery_receipts where idempotency_key = message_key) then return 'already_sent'; end if;
   select * into existing from public.whatsapp_message_queue where idempotency_key = message_key for update;
   if found then
+	-- A technician may move the return date away and then back. Reuse the
+	-- original row only when the system cancelled it before any send attempt.
+	-- A cancellation explicitly requested by the user remains cancelled.
+	if existing.status = 'cancelado' and existing.attempt_count = 0
+	   and existing.last_error = 'Ciclo de manutenção atualizado' then
+	  if exists (select 1 from public.whatsapp_message_queue where source_entity_id = appliance
+	      and event_type = 'lembrete_manutencao_recorrente' and status = 'processando') then return 'processing'; end if;
+	  update public.whatsapp_message_queue set status = 'cancelado', updated_at = now(),
+	    last_error = 'Ciclo de manutenção atualizado'
+	  where source_entity_id = appliance and event_type = 'lembrete_manutencao_recorrente' and status = 'pendente';
+	  update public.whatsapp_message_queue set status = 'pendente', last_error = null,
+	    scheduled_at = (p_payload->>'scheduled_at')::timestamptz,
+	    next_attempt_at = (p_payload->>'next_attempt_at')::timestamptz,
+	    expires_at = (p_payload->>'expires_at')::timestamptz,
+	    recipient_phone = p_payload->>'recipient_phone', message_text = p_payload->>'message_text',
+	    metadata = p_payload->'metadata', locked_until = null, updated_at = now()
+	  where id = existing.id;
+	  return 'pendente';
+	end if;
     -- Preserve cancellations, delivery status, retries and the original ID.
     if existing.status = 'pendente' and existing.attempt_count = 0 then
       update public.whatsapp_message_queue set recipient_phone = p_payload->>'recipient_phone',
