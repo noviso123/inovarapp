@@ -44,10 +44,10 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 	}
 
 	modeOptions := []app.UI{
-		app.Option().Value(teamQRCodeContact).Body(app.Text("Cartão de contato da empresa")),
-		app.Option().Value(teamQRCodeWhatsApp).Body(app.Text("Abrir WhatsApp comercial")),
-		app.Option().Value(teamQRCodeSite).Body(app.Text("Abrir o site do InovarApp")),
-		app.Option().Value(teamQRCodeCustom).Body(app.Text("Link ou texto personalizado")),
+		app.Option().Value(teamQRCodeContact).Selected(p.teamQRCodeMode == teamQRCodeContact).Body(app.Text("Cartão de contato da empresa")),
+		app.Option().Value(teamQRCodeWhatsApp).Selected(p.teamQRCodeMode == teamQRCodeWhatsApp).Body(app.Text("Abrir WhatsApp comercial")),
+		app.Option().Value(teamQRCodeSite).Selected(p.teamQRCodeMode == teamQRCodeSite).Body(app.Text("Abrir o site do InovarApp")),
+		app.Option().Value(teamQRCodeCustom).Selected(p.teamQRCodeMode == teamQRCodeCustom).Body(app.Text("Link ou texto personalizado")),
 	}
 	var settingsHint app.UI = app.Div()
 	if strings.TrimSpace(p.teamProfile.Phone) == "" || strings.TrimSpace(p.teamProfile.BusinessName) == "" {
@@ -356,3 +356,4 @@ func normalizeBusinessPhone(value string) string {
 	}
 	return phone
 }
+
