@@ -1,0 +1,3 @@
+97816c5823619a090f97a8dcc756ec28045cb04f1705b8e5a3ed52c067ed15cb  InovarApp-Android.apk
+182805815fcc22252a58e05aab70b63051dc0ef114be9c06aab37084a93876d3  InovarApp-Windows-Setup.exe
+73dec579137d011e7ae9114588422f97adceb90a623c7994a4550ed58e382f42  InovarApp-Windows-portable.zip

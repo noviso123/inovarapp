@@ -1,0 +1,17 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "InovarApp Desktop",
+  "outputfilename": "InovarApp",
+  "info": {
+    "companyName": "Inovar Refrigeração",
+    "productName": "InovarApp",
+    "productVersion": "1.0.3",
+    "copyright": "© Inovar Refrigeração",
+    "comments": "Aplicativo de gestão InovarApp",
+    "protocols": [{ "scheme": "inovarapp-desktop", "description": "Retorno de autenticação do InovarApp", "role": "Editor" }]
+  },
+  "build:dir": "../../../dist/desktop",
+  "preBuildHooks": {
+    "windows/amd64": "powershell -ExecutionPolicy Bypass -File ../../../scripts/build-web.ps1"
+  }
+}

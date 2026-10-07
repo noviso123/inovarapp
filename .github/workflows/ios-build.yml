@@ -1,0 +1,62 @@
+name: Compile iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'core/**'
+      - 'cmd/**'
+      - 'ios/**'
+      - 'src/platform/**'
+      - 'scripts/**'
+      - 'package*.json'
+      - 'go.*'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  archive:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Select Xcode 26
+        run: |
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort | tail -1)
+          test -n "$XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+      - run: npm ci
+      - name: Build current Go frontend and sync iOS
+        run: node scripts/build-ios-cloud.mjs
+      - name: Compile iOS release archive
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/ios/InovarApp.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' \
+            MARKETING_VERSION=1.3 CURRENT_PROJECT_VERSION=4 archive | tee build/ios/xcodebuild.log
+      - name: Preserve compilation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: InovarApp-iOS-unsigned-build-${{ github.run_number }}
+          path: build/ios/
+          retention-days: 3
+          if-no-files-found: error

@@ -1,0 +1,248 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #081427;
+    color: #f1f5f9;
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .inovar-page {
+    background:
+      radial-gradient(900px 420px at 50% -120px, rgba(22, 104, 180, .22), transparent 68%),
+      linear-gradient(180deg, #0b1329 0%, #07101f 100%);
+  }
+  .inovar-panel {
+    @apply rounded-2xl border border-slate-800 bg-slate-900/95 shadow-xl;
+  }
+  .inovar-section-title {
+    @apply text-[11px] font-extrabold uppercase tracking-[.12em] text-slate-400;
+  }
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Touch targets, keyboard focus and safe areas across phones and desktop. */
+@layer base {
+  button, a, input, select, textarea { touch-action: manipulation; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
+  input, select, textarea { max-width: 100%; }
+}
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+  button { min-height: 44px; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  .fixed.bottom-0 { padding-bottom: env(safe-area-inset-bottom); }
+  .inovar-page { background: linear-gradient(180deg, #0b1329 0%, #07101f 100%); }
+  .inovar-page main { overflow-x: clip; }
+  .inovar-page [role="dialog"] { max-width: calc(100vw - 1rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* O entorno do aplicativo é azul-escuro; os espaços de trabalho são claros.
+   Não use sobrescritas globais de cores aqui: cada cartão mantém suas cores
+   semânticas e o contraste do fluxo operacional. */
+
+/* Regra visual do PWA: a área de trabalho é sempre clara. Componentes antigos
+   ainda traziam classes neutras escuras; este escopo cobre somente o conteúdo
+   operacional dentro de main, preservando o cabeçalho, o fundo e a navegação. */
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-950"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-900"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-850"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-800"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-700"],
+.inovar-page main :is(div, section, article, form)[class*="bg-gray-900"],
+.inovar-page main :is(div, section, article, form)[class*="bg-gray-800"],
+.inovar-page main :is(div, section, article, form)[class*="bg-gradient-to-r"],
+.inovar-page main :is(div, section, article, form)[class*="bg-gradient-to-br"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* A raiz do app é escura por causa do cabeçalho. A área de trabalho, porém,
+   é clara: esta cor-base impede que textos sem classe em componentes antigos
+   herdem branco e desapareçam sobre cartões ou formulários brancos. */
+.inovar-page main { color: #1e293b; }
+
+.inovar-page main :is(input, select, textarea)[class*="bg-slate-"] {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+  color-scheme: light;
+}
+
+.inovar-page main :is(h1, h2, h3, h4, p, label)[class*="text-white"],
+.inovar-page main :is(h1, h2, h3, h4, p, label)[class*="text-slate-100"],
+.inovar-page main :is(h1, h2, h3, h4, p, label)[class*="text-slate-200"],
+.inovar-page main :is(h1, h2, h3, h4, p, label)[class*="text-slate-300"] {
+  color: #334155 !important;
+}
+
+/* Textos que pertenciam a cartões escuros também precisam acompanhar a
+   superfície clara. Botões preservam a própria cor de contraste. */
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-9"] :is(span, strong, b)[class*="text-white"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-8"] :is(span, strong, b)[class*="text-white"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-9"] :is(span, strong, b)[class*="text-slate-100"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-8"] :is(span, strong, b)[class*="text-slate-100"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-9"] :is(span, strong, b)[class*="text-slate-200"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-8"] :is(span, strong, b)[class*="text-slate-200"] {
+  color: #1e293b !important;
+}
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-9"] :is(span, strong, b)[class*="text-slate-400"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-8"] :is(span, strong, b)[class*="text-slate-400"] {
+  color: #475569 !important;
+}
+.inovar-page main button :is(span, strong, b)[class*="text-white"],
+.inovar-page main button :is(span, strong, b)[class*="text-slate-100"],
+.inovar-page main button :is(span, strong, b)[class*="text-slate-200"] {
+  color: inherit !important;
+}
+
+/* Telas operacionais usam o mesmo painel claro mesmo quando os componentes
+   legados possuem variações de cartão escuro. */
+.operational-screen :is(div, section, article, form)[class*="bg-slate-950"],
+.operational-screen :is(div, section, article, form)[class*="bg-slate-900"],
+.operational-screen :is(div, section, article, form)[class*="bg-slate-850"],
+.operational-screen :is(div, section, article, form)[class*="bg-slate-800"],
+.operational-screen :is(div, section, article, form)[class*="bg-slate-700"],
+.operational-screen :is(div, section, article, form)[class*="bg-gray-900"],
+.operational-screen :is(div, section, article, form)[class*="bg-gray-800"],
+.operational-screen :is(div, section, article, form)[class*="bg-gradient-to-r"],
+.operational-screen :is(div, section, article, form)[class*="bg-gradient-to-br"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+.operational-screen :is(input, select, textarea)[class*="bg-slate-"] {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+  color-scheme: light;
+}
+.operational-screen :is(h1, h2, h3, h4, p, label)[class*="text-white"],
+.operational-screen :is(h1, h2, h3, h4, p, label)[class*="text-slate-100"],
+.operational-screen :is(h1, h2, h3, h4, p, label)[class*="text-slate-200"],
+.operational-screen :is(h1, h2, h3, h4, p, label)[class*="text-slate-300"] { color: #334155 !important; }
+
+.operational-screen :is(div, section, article, form)[class*="bg-slate-"][class*="text-slate-"],
+.inovar-page main :is(div, section, article, form)[class*="bg-slate-"][class*="text-slate-"] {
+  color: #334155 !important;
+}
+.operational-screen :is(span, strong, b, li, dt, dd)[class*="text-slate-100"],
+.operational-screen :is(span, strong, b, li, dt, dd)[class*="text-slate-200"],
+.operational-screen :is(span, strong, b, li, dt, dd)[class*="text-slate-300"] {
+  color: #334155 !important;
+}
+.operational-screen :is(span, strong, b, li, dt, dd)[class*="text-slate-400"] {
+  color: #64748b !important;
+}
+
+/* Ações neutras não criam ilhas escuras nas áreas operacionais. Ações
+   semânticas (azul, verde, vermelho e amarelo) mantêm suas cores próprias. */
+.inovar-page main :is(button, a)[class*="bg-slate-950"],
+.inovar-page main :is(button, a)[class*="bg-slate-900"],
+.inovar-page main :is(button, a)[class*="bg-slate-850"],
+.inovar-page main :is(button, a)[class*="bg-slate-800"],
+.inovar-page main :is(button, a)[class*="bg-slate-700"],
+.operational-screen :is(button, a)[class*="bg-slate-950"],
+.operational-screen :is(button, a)[class*="bg-slate-900"],
+.operational-screen :is(button, a)[class*="bg-slate-850"],
+.operational-screen :is(button, a)[class*="bg-slate-800"],
+.operational-screen :is(button, a)[class*="bg-slate-700"] {
+  background-color: #ffffff !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+.inovar-page main :is(button, a)[class*="bg-slate-"] :is(span, strong, b),
+.operational-screen :is(button, a)[class*="bg-slate-"] :is(span, strong, b) {
+  color: inherit !important;
+}
+
+@media (max-width: 640px) {
+  .operational-screen :is(button, a) {
+    min-height: 44px;
+  }
+  .operational-screen :is(button, a)[class*="text-[10px]"] {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+}
+
+/* Diálogos seguem a mesma superfície clara das telas. O fundo translúcido
+   continua escuro apenas para manter o foco no formulário aberto. */
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] > :is(div, section, form)[class*="bg-slate-"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] > :is(div, section, form)[class*="bg-gradient-"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+.inovar-page [role="dialog"] { color: #0f172a; }
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(div, section, article, form)[class*="bg-slate-"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(div, section, article, form)[class*="bg-gradient-"] {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+/* Alguns diálogos antigos aplicavam `text-white` no contêiner do cabeçalho.
+   Como a superfície agora é clara, a cor herdada deixava o título invisível.
+   Corrige a herança em qualquer modal de uma única vez, sem alterar botões
+   semânticos (azul, verde, amarelo etc.). */
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(div, section, article, form)[class*="bg-slate-"][class*="text-white"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(div, section, article, form)[class*="bg-gradient-"][class*="text-white"] {
+  color: #0f172a !important;
+}
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(input, select, textarea)[class*="bg-slate-"] {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+  color-scheme: light;
+}
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(h1, h2, h3, h4, p, label, span)[class*="text-white"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(h1, h2, h3, h4, p, label, span)[class*="text-slate-100"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(h1, h2, h3, h4, p, label, span)[class*="text-slate-200"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(h1, h2, h3, h4, p, label, span)[class*="text-slate-300"] {
+  color: #334155 !important;
+}
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(button, a)[class*="bg-slate-950"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(button, a)[class*="bg-slate-900"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(button, a)[class*="bg-slate-850"],
+.inovar-page > :is(div, section)[class~="fixed"][class*="inset-0"] :is(button, a)[class*="bg-slate-800"] {
+  background-color: #ffffff !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}

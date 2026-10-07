@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">InovarApp</string>
+    <string name="title_activity_main">InovarApp</string>
+    <string name="package_name">com.inovarapp.mobile</string>
+    <string name="custom_url_scheme">com.inovarapp.mobile</string>
+</resources>

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist-go",
+  "functions": {
+    "api/go.go": { "maxDuration": 60 }
+  },
+  "redirects": [
+    { "source": "/downloads", "destination": "/downloads/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/d/:code", "destination": "/api/go?__go_path=/d/:code" },
+    { "source": "/api/go/:path*", "destination": "/api/go?__go_path=/:path*" },
+    { "source": "/api/:path*", "destination": "/api/go?__go_path=/api/:path*" }
+  ],
+  "headers": [
+    { "source": "/app-worker.js", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }] },
+    { "source": "/app.js", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+    { "source": "/web/app.wasm", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+    { "source": "/downloads/:path*", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] },
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }] },
+    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }] }
+  ]
+}

@@ -1,0 +1,23 @@
+# Envie somente o app Go/WASM, seus assets públicos e a função Go da Vercel.
+# O serviço WhatsApp Go é mantido no projeto Render/GitHub separado.
+/*
+!api
+!api/go.go
+/api/*.js
+/api/**/*.js
+api/go_test.go
+!cmd
+!cmd/**
+!core
+!core/**
+!internal
+!internal/**
+!public
+!public/**
+!scripts
+!scripts/vercel-build.mjs
+!package.json
+!package-lock.json
+!go.mod
+!go.sum
+!vercel.json
