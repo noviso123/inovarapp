@@ -67,7 +67,7 @@ async function goExecutable() {
 }
 
 const go = await goExecutable();
-const result = spawnSync(go, ['run', './cmd/web/vercelbuild'], {
+const result = spawnSync(go, ['run', '-buildvcs=false', './cmd/web/vercelbuild'], {
   cwd: root,
   stdio: 'inherit',
   env: { ...process.env, GOTOOLCHAIN: 'local' },
@@ -75,3 +75,4 @@ const result = spawnSync(go, ['run', './cmd/web/vercelbuild'], {
 });
 if (result.error) throw result.error;
 if (result.status !== 0) process.exit(result.status ?? 1);
+
