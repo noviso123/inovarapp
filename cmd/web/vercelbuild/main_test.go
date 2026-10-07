@@ -17,7 +17,7 @@ func TestValidateExportedBundleRequiresCompleteGoShell(t *testing.T) {
 		"manifest.webmanifest":    []byte("{}"),
 		"app-worker.js":           []byte("worker"),
 		"web/app.wasm":            {0x00, 0x61, 0x73, 0x6d},
-		"web/inovar.css":          []byte("body{}"),
+		"web/inovar.css":          []byte(":root { color: black; } body{}"),
 		"web/clean-auth-query.js": []byte("sanitize URL credentials"),
 		"web/icon-192.png":        []byte("icon"),
 		"web/icon-512.png":        []byte("icon"),
@@ -36,6 +36,16 @@ func TestValidateExportedBundleRequiresCompleteGoShell(t *testing.T) {
 	}
 	if err := validateExportedBundle(root); err != nil {
 		t.Fatalf("valid bundle rejected: %v", err)
+	}
+	cssPath := filepath.Join(root, "web", "inovar.css")
+	if err := os.WriteFile(cssPath, []byte("Warning: truncated output\n:root { color: black; }"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateExportedBundle(root); err == nil {
+		t.Fatal("truncated stylesheet accepted")
+	}
+	if err := os.WriteFile(cssPath, files["web/inovar.css"], 0o644); err != nil {
+		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "app.js"), []byte("react-dom"), 0o644); err != nil {
 		t.Fatal(err)
@@ -95,3 +105,4 @@ func TestWasmBuildEnvironmentOverridesExistingTargetValues(t *testing.T) {
 		t.Fatalf("expected one js/wasm target, got environment %#v", environment)
 	}
 }
+
