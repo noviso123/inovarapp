@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
 	"time"
 
-	"inovarapp/core/adapter/supabase"
 	"inovarapp/core/adapter/whatsappqueue"
 	"inovarapp/core/domain"
 )
@@ -59,16 +56,6 @@ func (h Handler) syncMaintenanceRows(ctx context.Context, now time.Time, custome
 		}
 		bucket := maintenanceReminderBucket(cycle.ExpectedDate, interval, localNow)
 		key := fmt.Sprintf("manutencao:%s:%s:%s:%d", cycle.Customer.ID, cycle.Appliance.ID, cycle.ExpectedDate, bucket)
-		// Retire reminders belonging to an earlier maintenance cycle, preserving
-		// the current cycle's retries and the complete delivery history.
-		query := url.Values{"source_entity_type": {"eq.aparelho"}, "source_entity_id": {"eq." + cycle.Appliance.ID}, "event_type": {"eq.lembrete_manutencao_recorrente"}, "status": {"eq.pendente"}, "metadata->>proxima_manutencao": {"neq." + cycle.ExpectedDate}}
-		res, err := h.Supabase.ServiceRequest(ctx, "/rest/v1/whatsapp_message_queue?"+query.Encode(), supabase.RequestOptions{Method: http.MethodPatch, Body: map[string]any{"status": "cancelado", "last_error": "Ciclo de manutenção atualizado", "updated_at": now.UTC()}, Prefer: "return=minimal"})
-		if err != nil {
-			return err
-		}
-		if res.StatusCode < 200 || res.StatusCode >= 300 {
-			return fmt.Errorf("não foi possível atualizar o ciclo da fila (status %d)", res.StatusCode)
-		}
 		// Existing overdue cycles are handled by the daily reminder flow.
 		if cycle.DaysToDue < 0 {
 			continue
