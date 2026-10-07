@@ -806,7 +806,7 @@ func teamServiceReceiptMessage(service map[string]any, profile domain.Technician
 	if returnDate == "" {
 		months := profile.DefaultReturnMonths
 		if months == 0 {
-			months = 6
+			months = 3
 		}
 		if parsed, err := time.Parse("2006-01-02", date); err == nil {
 			returnDate = domain.AddMonthsClamped(parsed, months).Format("2006-01-02")
@@ -839,3 +839,4 @@ func teamServiceWhatsAppFallbackLink(href string) app.UI {
 	}
 	return app.A().Class("auth-submit").Href(href).Target("_blank").Rel("noopener noreferrer").Body(app.Text("Abrir WhatsApp para enviar link do PDF"))
 }
+
