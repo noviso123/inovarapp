@@ -241,7 +241,7 @@ func defaultTechnicianSettings() map[string]json.RawMessage {
 	defaults := map[string]any{
 		"businessName": "Inovar Refrigeração", "cnpj": "36.020.014/0001-14", "address": "Serra",
 		"name": "Gabriel", "phone": "27998279185", "pixKey": "gabrielnascimento458@gmail.com", "pixType": "email",
-		"defaultReturnMonths": 6, "defaultWarrantyDays": 90, "defaultPrice": 250,
+		"defaultReturnMonths": 3, "defaultWarrantyDays": 90, "defaultPrice": 250,
 		"assinatura":    "/inovar-brand/INOVAR_SIGNATURE_GABRIEL.png",
 		"email_api_key": "", "email_from": "", "email_gmail_user": "", "email_gmail_pass": "", "email_google_account": "", "email_google_refresh_token": "",
 		"tiposServicosCustom": []any{}, "mensagensWhats": map[string]string{}, "lembrete_intervalo_dias": 7,
@@ -322,3 +322,4 @@ func writeSettingsJSON(w http.ResponseWriter, status int, response settingsRespo
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(response)
 }
+
