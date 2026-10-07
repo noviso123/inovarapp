@@ -63,6 +63,22 @@ func TestFromEnvAcceptsCurrentViteVariableNames(t *testing.T) {
 	}
 }
 
+func TestFromEnvAcceptsSupabasePublishableAndSecretKeys(t *testing.T) {
+	t.Setenv("SUPABASE_URL", "https://example.supabase.co")
+	t.Setenv("SUPABASE_ANON_KEY", "")
+	t.Setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+	t.Setenv("SUPABASE_SERVICE_ROLE_KEY", "")
+	t.Setenv("SUPABASE_SECRET_KEY", "sb_secret_test")
+
+	client, err := FromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.anonKey != "sb_publishable_test" || client.serviceRoleKey != "sb_secret_test" {
+		t.Fatal("new Supabase API key names were not mapped")
+	}
+}
+
 func TestServiceRequestIsSeparateAndRequiresServerKey(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.Header.Get("apikey"); got != "server-secret" {
@@ -83,6 +99,24 @@ func TestServiceRequestIsSeparateAndRequiresServerKey(t *testing.T) {
 	withoutServiceKey := testClient(t, server.URL, "public-anon", "")
 	if _, err := withoutServiceKey.ServiceRequest(context.Background(), "/rest/v1/customers", RequestOptions{}); err != ErrNotConfigured {
 		t.Fatalf("error = %v, want ErrNotConfigured", err)
+	}
+}
+
+func TestServiceRequestSendsNewSecretKeyOnlyAsAPIKey(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("apikey"); got != "sb_secret_test" {
+			t.Errorf("apikey = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("new secret API key must not be sent as a bearer token; authorization = %q", got)
+		}
+		_, _ = io.WriteString(w, `[]`)
+	}))
+	defer server.Close()
+
+	client := testClient(t, server.URL, "sb_publishable_test", "sb_secret_test")
+	if _, err := client.ServiceRequest(context.Background(), "/rest/v1/whatsapp_message_queue", RequestOptions{}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -182,3 +216,4 @@ func testClient(t *testing.T, baseURL, anonKey, serviceKey string) *Client {
 	}
 	return client
 }
+
