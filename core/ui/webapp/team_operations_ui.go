@@ -1049,6 +1049,9 @@ func (p *serviceCatalogPage) teamOperationsSection() app.UI {
 	if view == "whatsapp" {
 		content = append(content, p.teamWhatsAppQueuePanel())
 	}
+	if view == "qr-code" {
+		content = append(content, p.teamQRCodePanel())
+	}
 	serviceCards := make([]app.UI, 0, len(p.teamServices))
 	for _, service := range p.teamServices {
 		id, status := portalText(service["id"]), strings.ToUpper(portalText(service["status"]))
@@ -1834,3 +1837,4 @@ func teamCustomerActionMessage(serviceDetail map[string]any, action string) stri
 		return "Confirma esta ação?"
 	}
 }
+
