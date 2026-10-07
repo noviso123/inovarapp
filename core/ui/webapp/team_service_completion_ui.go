@@ -55,7 +55,7 @@ func newTeamCompletionForm(service map[string]any, profile domain.TechnicianProf
 	warranty := teamCompletionWarrantyDays(serviceType, profile)
 	months := profile.DefaultReturnMonths
 	if months == 0 {
-		months = 6
+		months = 3
 	}
 	checklist := make(map[string]any, len(completionChecklistDefaults))
 	for key, value := range completionChecklistDefaults {
@@ -354,3 +354,4 @@ func teamCompletionCatalogValue(entry domain.CatalogEntry) string {
 	}
 	return entry.Name
 }
+
