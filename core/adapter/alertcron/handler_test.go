@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -17,6 +18,33 @@ import (
 	"inovarapp/core/adapter/webpush"
 	"inovarapp/core/adapter/whatsapp"
 )
+
+func TestReadAllRowsReadsBeyondFirstPage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+		if r.URL.Query().Get("limit") != "500" || r.URL.Query().Get("order") != "data.desc,id.asc" {
+			t.Errorf("missing stable pagination: %s", r.URL.RawQuery)
+		}
+		rows := make([]map[string]any, 0)
+		for i := offset; i < offset+500 && i < 1201; i++ {
+			rows = append(rows, map[string]any{"id": fmt.Sprint(i)})
+		}
+		_ = json.NewEncoder(w).Encode(rows)
+	}))
+	defer server.Close()
+	client, err := supabase.New(supabase.Config{URL: server.URL, AnonKey: "anon", ServiceRoleKey: "service-role"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := Handler{Supabase: client}
+	var rows []map[string]any
+	if err := h.readAllRows(context.Background(), "/rest/v1/service_history?order=data.desc&limit=2000", &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1201 || rows[1200]["id"] != "1200" {
+		t.Fatalf("incomplete rows: %d", len(rows))
+	}
+}
 
 type mailFunc func(context.Context, mailadapter.Config, mailadapter.Message) (string, error)
 
@@ -308,3 +336,4 @@ func TestHourlyAgendaWhatsAppSendsTemplateAndDeduplicates(t *testing.T) {
 		t.Fatalf("same appointment must persist only one queue message: %#v", keys)
 	}
 }
+
