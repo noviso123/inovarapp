@@ -71,6 +71,10 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/rest/v1/whatsapp_message_queue":
+			if r.Method == http.MethodPatch {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
 			var message map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
 				t.Error(err)
@@ -336,4 +340,3 @@ func TestHourlyAgendaWhatsAppSendsTemplateAndDeduplicates(t *testing.T) {
 		t.Fatalf("same appointment must persist only one queue message: %#v", keys)
 	}
 }
-
