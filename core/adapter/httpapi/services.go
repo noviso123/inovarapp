@@ -16,7 +16,10 @@ import (
 	"inovarapp/core/domain"
 )
 
-type ServicesHandler struct{ Supabase *supabase.Client }
+type ServicesHandler struct {
+	Supabase            *supabase.Client
+	ScheduleMaintenance MaintenanceScheduler
+}
 
 type AppointmentsHandler struct{ Supabase *supabase.Client }
 
@@ -78,7 +81,9 @@ func (h ServicesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		forwardUserResource(w, r, h.Supabase, "/rest/v1/services", http.MethodPost, fields, "", true)
+		if forwardUserResource(w, r, h.Supabase, "/rest/v1/services", http.MethodPost, fields, "", true) {
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
+		}
 	case http.MethodPatch, http.MethodPut:
 		if !isTeamRole(caller.Role) {
 			writeResourceJSON(w, http.StatusForbidden, map[string]string{"error": "Somente a equipe pode alterar serviços"})
@@ -88,8 +93,11 @@ func (h ServicesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if forwardUserResource(w, r, h.Supabase, resourceByID("services", "id", mutation.ID), http.MethodPatch, mutation.Fields, "", true) && serviceQueueMustBeCancelled(mutation.Fields) {
-			_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "servico", mutation.ID, "Agendamento alterado ou serviço encerrado; aviso anterior cancelado")
+		if forwardUserResource(w, r, h.Supabase, resourceByID("services", "id", mutation.ID), http.MethodPatch, mutation.Fields, "", true) {
+			if serviceQueueMustBeCancelled(mutation.Fields) {
+				_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "servico", mutation.ID, "Agendamento alterado ou serviço encerrado; aviso anterior cancelado")
+			}
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
 		}
 	case http.MethodDelete:
 		if !isTeamRole(caller.Role) {
@@ -102,6 +110,7 @@ func (h ServicesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if forwardUserResource(w, r, h.Supabase, resourceByID("services", "id", mutation.ID), http.MethodDelete, nil, "return=minimal", false) {
 			_ = whatsappqueue.CancelPendingBySource(r.Context(), h.Supabase, "servico", mutation.ID, "Ordem de serviço excluída; aviso pendente cancelado")
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
 		}
 	default:
 		writeResourceJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Método não permitido"})
