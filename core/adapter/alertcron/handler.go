@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	mailadapter "inovarapp/core/adapter/email"
@@ -189,7 +190,7 @@ func (h Handler) runDaily(ctx context.Context, now time.Time) (map[string]any, e
 		months = h.Months
 	}
 	if months < 1 {
-		months = 6
+		months = 3
 	}
 	maxLate := h.MaxLateDays
 	localNow := now.In(saoPauloLocation())
@@ -533,8 +534,18 @@ func (h Handler) loadBase(ctx context.Context) ([]customerRow, []profileRow, []a
 		path string
 		out  any
 	}{{"/rest/v1/customers?select=id,nome,whatsapp,profile_id,ativo&ativo=eq.true", &customers}, {"/rest/v1/profiles?select=id,email", &profiles}, {"/rest/v1/air_conditioners?select=id,cliente_id,marca,modelo,btus,ambiente,ultima_manutencao", &appliances}, {"/rest/v1/service_history?select=cliente_id,aparelho_id,data,observacoes&order=data.desc&limit=2000", &histories}, {"/rest/v1/services?status=eq.CONCLUIDO&select=cliente_id,aparelho_id,data_agendamento,data_conclusao,status,observacoes&order=data_conclusao.desc.nullslast,data_agendamento.desc&limit=2000", &completed}}
-	for _, query := range queries {
-		if err := h.readRows(ctx, query.path, query.out); err != nil {
+	errs := make([]error, len(queries))
+	var wg sync.WaitGroup
+	for i, query := range queries {
+		wg.Add(1)
+		go func(i int, path string, out any) {
+			defer wg.Done()
+			errs[i] = h.readAllRows(ctx, path, out)
+		}(i, query.path, query.out)
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
 			return nil, nil, nil, nil, nil, nil, err
 		}
 	}
@@ -558,6 +569,44 @@ func (h Handler) readRows(ctx context.Context, path string, target any) error {
 		return fmt.Errorf("resposta Supabase inválida: %w", err)
 	}
 	return nil
+}
+
+// Read every page rather than silently losing customers to the PostgREST row cap.
+func (h Handler) readAllRows(ctx context.Context, path string, target any) error {
+	u, err := url.Parse(path)
+	if err != nil {
+		return err
+	}
+	q := u.Query()
+	order := q.Get("order")
+	if order == "" {
+		order = "id.asc"
+	} else {
+		order += ",id.asc"
+	}
+	q.Set("order", order)
+	q.Set("limit", "500")
+	rows := make([]json.RawMessage, 0)
+	for offset := 0; ; offset += 500 {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		q.Set("offset", strconv.Itoa(offset))
+		u.RawQuery = q.Encode()
+		var page []json.RawMessage
+		if err := h.readRows(ctx, u.String(), &page); err != nil {
+			return err
+		}
+		rows = append(rows, page...)
+		if len(page) < 500 {
+			break
+		}
+	}
+	data, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, target)
 }
 func (h Handler) loadConfig(ctx context.Context) (map[string]json.RawMessage, error) {
 	result, err := h.Supabase.ServiceRequest(ctx, technicianConfigPath, supabase.RequestOptions{Method: http.MethodGet})
@@ -884,3 +933,4 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 func serviceDateQuery(date string) string {
 	return "/rest/v1/services?" + url.Values{"status": {"eq.AGENDADO"}, "data_agendamento": {"eq." + date}}.Encode()
 }
+
