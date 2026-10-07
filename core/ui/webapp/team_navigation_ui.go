@@ -30,6 +30,8 @@ func teamNavigationKey(anchor string) string {
 		return "customers"
 	case "team-whatsapp-queue":
 		return "whatsapp"
+	case "team-qr-code":
+		return "qr-code"
 	default:
 		return "dashboard"
 	}
@@ -89,6 +91,7 @@ func (p *serviceCatalogPage) teamWorkspaceNavigation() app.UI {
 		{label: "Serviços", anchor: "team-operations-services", count: p.teamDashboard.TotalServices},
 		{label: "Clientes", anchor: "team-customers", count: p.teamDashboard.Customers},
 		{label: "Mensagens WhatsApp", anchor: "team-whatsapp-queue", count: p.teamWhatsAppQueueCounts["pendente"] + p.teamWhatsAppQueueCounts["processando"]},
+		{label: "QR da Empresa", anchor: "team-qr-code"},
 	}
 	links := make([]app.UI, 0, len(items))
 	for index, item := range items {
@@ -166,6 +169,8 @@ func teamNavigationIcon(anchor string) string {
 		return "♙"
 	case "team-whatsapp-queue":
 		return "◌"
+	case "team-qr-code":
+		return "▦"
 	default:
 		return "•"
 	}
@@ -187,6 +192,8 @@ func teamMobileDestination(section string) string {
 		return "Clientes"
 	case "whatsapp":
 		return "WhatsApp"
+	case "qr-code":
+		return "QR da empresa"
 	default:
 		return "Painel"
 	}
@@ -210,7 +217,10 @@ func teamMobileNavLabel(anchor string) string {
 		return "Clientes"
 	case "team-whatsapp-queue":
 		return "WhatsApp"
+	case "team-qr-code":
+		return "QR empresa"
 	default:
 		return "Painel"
 	}
 }
+
