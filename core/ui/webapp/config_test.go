@@ -23,3 +23,20 @@ func TestPublicAppEnvironmentExposesOnlyBrowserSafePushConfiguration(t *testing.
 		t.Fatal("service-role key leaked to PWA configuration")
 	}
 }
+
+func TestPublicAppEnvironmentAcceptsNewPublishableKeyWithoutExposingSecret(t *testing.T) {
+	t.Setenv("SUPABASE_URL", "https://example.supabase.co")
+	t.Setenv("SUPABASE_ANON_KEY", "")
+	t.Setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+	t.Setenv("SUPABASE_SERVICE_ROLE_KEY", "")
+	t.Setenv("SUPABASE_SECRET_KEY", "sb_secret_private_test")
+
+	values := publicSupabaseEnvironment()
+	if values["SUPABASE_URL"] != "https://example.supabase.co" || values["SUPABASE_ANON_KEY"] != "sb_publishable_test" {
+		t.Fatalf("new browser-safe Supabase configuration was not mapped: %v", values)
+	}
+	if _, ok := values["SUPABASE_SECRET_KEY"]; ok {
+		t.Fatal("Supabase secret key leaked to PWA configuration")
+	}
+}
+
