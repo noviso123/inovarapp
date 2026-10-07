@@ -96,6 +96,8 @@ func TestProcessDueSchedulesRetryAfterProviderFailure(t *testing.T) {
 	var finish map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/rest/v1/rpc/validate_whatsapp_reminder":
+			_, _ = w.Write([]byte(`true`))
 		case r.Method == http.MethodPatch && r.URL.Path == tablePath:
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == http.MethodGet && r.URL.Path == "/v1/sessions/inovar":
@@ -144,4 +146,3 @@ func testQueueClient(t *testing.T, server *httptest.Server) *supabase.Client {
 	}
 	return client
 }
-
