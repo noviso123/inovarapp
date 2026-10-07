@@ -193,7 +193,7 @@ func (p *serviceCatalogPage) openTeamHistoryForm(applianceID string) app.EventHa
 		}
 		months := p.teamProfile.DefaultReturnMonths
 		if months <= 0 {
-			months = 6
+			months = 3
 		}
 		serviceType, price := teamHistoryInitialSelection(p.teamProfile)
 		p.teamHistoryForm = &teamHistoryForm{ApplianceID: applianceID, CustomerID: customerID, Type: serviceType, Date: time.Now().AddDate(0, -months, 0).Format("2006-01-02"), Price: strconv.FormatFloat(price, 'f', 2, 64), UpdateCycle: true}
@@ -612,7 +612,7 @@ func teamHistoryReturnDate(row map[string]any, defaultMonths int) string {
 		return ""
 	}
 	if defaultMonths <= 0 {
-		defaultMonths = 6
+		defaultMonths = 3
 	}
 	return domain.AddMonthsClamped(parsed, defaultMonths).Format("2006-01-02")
 }
@@ -641,3 +641,4 @@ func (p *serviceCatalogPage) selectTeamHistoryType(ctx app.Context, event app.Ev
 	updateTeamHistoryServiceType(p.teamHistoryForm, p.teamProfile, event.Get("target").Get("value").String())
 	ctx.Update()
 }
+
