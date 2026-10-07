@@ -20,7 +20,7 @@ func publicSupabaseEnvironment() map[string]string {
 	if value := configuredValue("SUPABASE_URL", "VITE_SUPABASE_URL"); value != "" {
 		values["SUPABASE_URL"] = value
 	}
-	if value := configuredValue("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"); value != "" {
+	if value := configuredValue("SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY"); value != "" {
 		values["SUPABASE_ANON_KEY"] = value
 	}
 	if value := configuredValue("VAPID_PUBLIC_KEY"); value != "" {
@@ -35,8 +35,8 @@ func publicSupabaseEnvironment() map[string]string {
 func serverSupabaseClient() (*supabase.Client, error) {
 	return supabase.New(supabase.Config{
 		URL:            configuredValue("SUPABASE_URL", "VITE_SUPABASE_URL"),
-		AnonKey:        configuredValue("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"),
-		ServiceRoleKey: configuredValue("SUPABASE_SERVICE_ROLE_KEY"),
+		AnonKey:        configuredValue("SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY"),
+		ServiceRoleKey: configuredValue("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
 	})
 }
 
@@ -120,3 +120,4 @@ func dotenvScalar(value string) string {
 	}
 	return value
 }
+
