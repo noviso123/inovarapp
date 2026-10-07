@@ -123,8 +123,8 @@ func New(cfg Config) (*Client, error) {
 func FromEnv() (*Client, error) {
 	return New(Config{
 		URL:            envFirst("SUPABASE_URL", "VITE_SUPABASE_URL"),
-		AnonKey:        envFirst("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"),
-		ServiceRoleKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+		AnonKey:        envFirst("SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY"),
+		ServiceRoleKey: envFirst("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
 	})
 }
 
@@ -161,7 +161,13 @@ func (c *Client) ServiceRequest(ctx context.Context, path string, options Reques
 	if strings.TrimSpace(c.serviceRoleKey) == "" {
 		return Result{}, ErrNotConfigured
 	}
-	return c.do(ctx, c.serviceRoleKey, c.serviceRoleKey, path, options)
+	// Supabase's new sb_secret keys belong in apikey only. They are not JWTs,
+	// so sending one as Authorization: Bearer causes Supabase to reject it.
+	bearer := c.serviceRoleKey
+	if strings.HasPrefix(strings.TrimSpace(bearer), "sb_secret_") {
+		bearer = ""
+	}
+	return c.do(ctx, c.serviceRoleKey, bearer, path, options)
 }
 
 // RequireServiceRole reports whether this server client is configured for
@@ -195,7 +201,9 @@ func (c *Client) do(ctx context.Context, apiKey, bearer, path string, options Re
 		return Result{}, fmt.Errorf("create Supabase request: %w", err)
 	}
 	req.Header.Set("apikey", apiKey)
-	req.Header.Set("Authorization", "Bearer "+bearer)
+	if strings.TrimSpace(bearer) != "" {
+		req.Header.Set("Authorization", "Bearer "+bearer)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	prefer := options.Prefer
 	if prefer == "" {
@@ -284,3 +292,4 @@ func (c *Client) AuthenticateCaller(ctx context.Context, token string) (Caller, 
 		return Caller{}, ErrUnauthorized
 	}
 }
+
