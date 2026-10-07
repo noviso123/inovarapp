@@ -77,6 +77,12 @@ type serviceCatalogPage struct {
 	teamWhatsAppQueueLoaded           bool
 	teamWhatsAppQueueUpdatedAt        string
 	teamWhatsAppQueueRefreshScheduled bool
+	teamQRCodeMode                    string
+	teamQRCodeCustom                  string
+	teamQRCodePayload                 string
+	teamQRCodePNG                     string
+	teamQRCodeSVG                     string
+	teamQRCodeError                   string
 	teamNavOpen                       bool
 	teamQueueSection                  string
 	teamQueueFilter                   string
@@ -534,3 +540,4 @@ func webAssemblyContentLength() string {
 	}
 	return strconv.FormatInt(info.Size(), 10)
 }
+
