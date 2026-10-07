@@ -533,7 +533,7 @@ func (p *serviceCatalogPage) teamSettingsDialog() app.UI {
 			app.Label().Class("auth-field").Body(app.Text("Tipo de Chave"), app.Select().Attr("value", f.PIXType).OnChange(p.ValueTo(&f.PIXType)).Body(options...)),
 			app.Div().Class("team-settings-form__numbers").Body(
 				field("Preço Médio Limpeza (R$)", f.DefaultPrice, "250", &f.DefaultPrice, "number"),
-				field("Ciclo Padrão (meses)", f.ReturnMonths, "6", &f.ReturnMonths, "number"),
+				field("Ciclo Padrão (meses)", f.ReturnMonths, "3", &f.ReturnMonths, "number"),
 				field("Garantia padrão (dias)", f.WarrantyDays, "90", &f.WarrantyDays, "number"),
 			),
 			p.teamEmailSettings(),
@@ -806,3 +806,4 @@ func whatsappStateLabel(state string) string {
 		return ""
 	}
 }
+
