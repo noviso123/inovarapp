@@ -77,9 +77,13 @@ func (h HTTPHandler) list(w http.ResponseWriter, ctx context.Context) {
 	activeQuery := url.Values{"select": {selectFields}, "status": {"in.(pendente,processando)"}, "order": {"scheduled_at.asc"}, "limit": {"500"}}
 	historyQuery := url.Values{"select": {selectFields}, "status": {"in.(enviado,falha,cancelado,expirado)"}, "order": {"created_at.desc"}, "limit": {"300"}}
 	activeResult, activeErr := h.Supabase.ServiceRequest(ctx, tablePath+"?"+activeQuery.Encode(), supabase.RequestOptions{Method: http.MethodGet})
+	if activeErr != nil || activeResult.StatusCode != http.StatusOK {
+		queueDependencyFailure(w, "mensagens pendentes", "mensagens_pendentes", activeResult, activeErr)
+		return
+	}
 	historyResult, historyErr := h.Supabase.ServiceRequest(ctx, tablePath+"?"+historyQuery.Encode(), supabase.RequestOptions{Method: http.MethodGet})
-	if activeErr != nil || historyErr != nil || activeResult.StatusCode != http.StatusOK || historyResult.StatusCode != http.StatusOK {
-		queueJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "Não foi possível carregar a fila. Verifique se a migração da fila foi aplicada no Supabase."})
+	if historyErr != nil || historyResult.StatusCode != http.StatusOK {
+		queueDependencyFailure(w, "histórico da fila", "historico_fila", historyResult, historyErr)
 		return
 	}
 	var messages, historyMessages []Message
@@ -92,8 +96,12 @@ func (h HTTPHandler) list(w http.ResponseWriter, ctx context.Context) {
 	}
 	countsResult, countsErr := h.Supabase.ServiceRequest(ctx, "/rest/v1/rpc/whatsapp_message_queue_counts", supabase.RequestOptions{Method: http.MethodPost, Body: map[string]any{}})
 	counts := map[string]int{"pendente": 0, "processando": 0, "enviado": 0, "expirado": 0, "falha": 0, "cancelado": 0}
-	if countsErr != nil || countsResult.StatusCode < 200 || countsResult.StatusCode >= 300 || json.Unmarshal(countsResult.Body, &counts) != nil {
-		queueJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "Não foi possível consultar os totais da fila. Verifique se a migração da fila foi aplicada no Supabase."})
+	if countsErr != nil || countsResult.StatusCode < 200 || countsResult.StatusCode >= 300 {
+		queueDependencyFailure(w, "contagens da fila", "contagens_fila", countsResult, countsErr)
+		return
+	}
+	if json.Unmarshal(countsResult.Body, &counts) != nil {
+		queueJSON(w, http.StatusBadGateway, map[string]string{"error": "O Supabase retornou contagens inválidas para a fila.", "etapa": "contagens_fila"})
 		return
 	}
 	historyByMessage := map[string][]attemptView{}
@@ -108,23 +116,27 @@ func (h HTTPHandler) list(w http.ResponseWriter, ctx context.Context) {
 			"order":      {"started_at.desc"}, "limit": {"1000"},
 		}
 		attemptsResult, attemptsErr := h.Supabase.ServiceRequest(ctx, "/rest/v1/whatsapp_message_attempts?"+attemptQuery.Encode(), supabase.RequestOptions{Method: http.MethodGet})
-		if attemptsErr == nil && attemptsResult.StatusCode == http.StatusOK {
-			var attempts []struct {
-				MessageID  string    `json:"message_id"`
-				Number     int       `json:"attempt_number"`
-				Status     string    `json:"status"`
-				Error      string    `json:"error_message"`
-				StartedAt  time.Time `json:"started_at"`
-				FinishedAt time.Time `json:"finished_at"`
-			}
-			if json.Unmarshal(attemptsResult.Body, &attempts) == nil {
-				for _, attempt := range attempts {
-					historyByMessage[attempt.MessageID] = append(historyByMessage[attempt.MessageID], attemptView{
-						Number: attempt.Number, Status: attempt.Status, Error: attempt.Error,
-						StartedAt: attempt.StartedAt, FinishedAt: attempt.FinishedAt,
-					})
-				}
-			}
+		if attemptsErr != nil || attemptsResult.StatusCode != http.StatusOK {
+			queueDependencyFailure(w, "histórico de tentativas", "tentativas", attemptsResult, attemptsErr)
+			return
+		}
+		var attempts []struct {
+			MessageID  string    `json:"message_id"`
+			Number     int       `json:"attempt_number"`
+			Status     string    `json:"status"`
+			Error      string    `json:"error_message"`
+			StartedAt  time.Time `json:"started_at"`
+			FinishedAt time.Time `json:"finished_at"`
+		}
+		if json.Unmarshal(attemptsResult.Body, &attempts) != nil {
+			queueJSON(w, http.StatusBadGateway, map[string]string{"error": "O Supabase retornou um histórico de tentativas inválido.", "etapa": "tentativas"})
+			return
+		}
+		for _, attempt := range attempts {
+			historyByMessage[attempt.MessageID] = append(historyByMessage[attempt.MessageID], attemptView{
+				Number: attempt.Number, Status: attempt.Status, Error: attempt.Error,
+				StartedAt: attempt.StartedAt, FinishedAt: attempt.FinishedAt,
+			})
 		}
 	}
 	views := make([]queueView, 0, len(messages))
@@ -133,7 +145,7 @@ func (h HTTPHandler) list(w http.ResponseWriter, ctx context.Context) {
 			ID: message.ID, EventType: message.EventType, Recipient: maskPhone(message.RecipientPhone),
 			Sensitive: message.Sensitive, ScheduledAt: message.ScheduledAt, NextAttemptAt: message.NextAttemptAt,
 			ExpiresAt: message.ExpiresAt,
-			Status: message.Status, AttemptCount: message.AttemptCount, LastError: message.LastError,
+			Status:    message.Status, AttemptCount: message.AttemptCount, LastError: message.LastError,
 			CreatedAt: message.CreatedAt, SentAt: message.SentAt, SourceEntity: message.SourceEntityType,
 			History: historyByMessage[message.ID], Context: message.Metadata,
 		}
@@ -143,6 +155,22 @@ func (h HTTPHandler) list(w http.ResponseWriter, ctx context.Context) {
 		views = append(views, view)
 	}
 	queueJSON(w, http.StatusOK, map[string]any{"items": views, "counts": counts, "loaded_at": time.Now().UTC()})
+}
+
+func queueDependencyFailure(w http.ResponseWriter, resource, stage string, result supabase.Result, err error) {
+	message := ""
+	status := result.StatusCode
+	switch {
+	case err != nil:
+		message = "Não foi possível alcançar o Supabase ao consultar " + resource + ". Verifique a disponibilidade do banco e a URL configurada no Vercel."
+	case status == http.StatusUnauthorized || status == http.StatusForbidden:
+		message = "O Supabase recusou o acesso a " + resource + ". Confirme se SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY pertencem ao mesmo projeto."
+	case status == http.StatusNotFound:
+		message = "O recurso do Supabase necessário para " + resource + " não foi encontrado (HTTP 404). Aplique as migrações no projeto usado pelo Vercel e atualize o cache da API."
+	default:
+		message = fmt.Sprintf("O Supabase respondeu HTTP %d ao consultar %s.", status, resource)
+	}
+	queueJSON(w, http.StatusServiceUnavailable, map[string]any{"error": message, "etapa": stage, "http_status": status})
 }
 
 func (h HTTPHandler) action(w http.ResponseWriter, r *http.Request) {
@@ -209,3 +237,4 @@ func queueJSON(w http.ResponseWriter, status int, value any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
 }
+
