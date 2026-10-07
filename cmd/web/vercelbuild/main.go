@@ -29,9 +29,10 @@ func main() {
 	if err := os.MkdirAll(filepath.Dir(wasmPath), 0o755); err != nil {
 		log.Fatal(err)
 	}
-	// Always rebuild the browser bundle: the Go build cache on hosted builders
-	// can otherwise retain a WASM bundle whose embedded UI predates this deploy.
-	command := exec.Command("go", "build", "-a", "-trimpath", "-ldflags=-s -w", "-o", wasmPath, "./cmd/web")
+	// The builder may receive an incomplete Git checkout. Vercel records the
+	// release commit separately; Go must not require Git metadata to compile.
+	// Go's content-addressed cache also tracks embedded assets, so avoid -a.
+	command := exec.Command("go", "build", "-buildvcs=false", "-trimpath", "-ldflags=-s -w", "-o", wasmPath, "./cmd/web")
 	command.Dir = root
 	command.Env = wasmBuildEnvironment(os.Environ())
 	command.Stdout, command.Stderr = os.Stdout, os.Stderr
@@ -158,3 +159,4 @@ func validateExportedBundle(output string) error {
 	}
 	return nil
 }
+
