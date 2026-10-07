@@ -130,7 +130,7 @@ func (p *serviceCatalogPage) loadTeamOperations(ctx app.Context) {
 				p.teamProfile = *mergeOfflineTeamProfile(offlineProfile(p.teamProfile), cachedSnapshot.PendingSettings)
 			}
 			if p.teamProfile.DefaultReturnMonths == 0 {
-				p.teamProfile.DefaultReturnMonths = 6
+				p.teamProfile.DefaultReturnMonths = 3
 			}
 			if p.teamProfile.DefaultWarrantyDays == 0 {
 				p.teamProfile.DefaultWarrantyDays = 90
