@@ -14,7 +14,10 @@ import (
 	"inovarapp/core/domain"
 )
 
-type HTTPHandler struct{ Supabase *supabase.Client }
+type HTTPHandler struct {
+	Supabase        *supabase.Client
+	SyncMaintenance func(context.Context, time.Time) error
+}
 
 type queueView struct {
 	ID            string         `json:"id"`
@@ -64,6 +67,12 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
+		if h.SyncMaintenance != nil {
+			if err := h.SyncMaintenance(r.Context(), time.Now()); err != nil {
+				queueJSON(w, http.StatusBadGateway, map[string]string{"error": "Não foi possível registrar os próximos lembretes de manutenção. Atualize a fila para tentar novamente.", "etapa": "agendar_manutencao"})
+				return
+			}
+		}
 		h.list(w, r.Context())
 	case http.MethodPost:
 		h.action(w, r)
@@ -237,4 +246,3 @@ func queueJSON(w http.ResponseWriter, status int, value any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
 }
-
