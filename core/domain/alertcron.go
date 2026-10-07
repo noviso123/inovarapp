@@ -40,12 +40,12 @@ func BuildPreventiveAlerts(customers []AlertCustomer, appliances []AlertApplianc
 // a fallback and honors a return date explicitly saved on a completed service.
 func BuildPreventiveAlertsWithDefault(customers []AlertCustomer, appliances []AlertAppliance, history []AlertHistory, services []AlertService, months, maxLateDays int, now time.Time) []PreventiveAlert {
 	if months <= 0 {
-		months = 6
+		months = 3
 	}
 	if maxLateDays <= 0 {
 		maxLateDays = 180
 	}
-	today := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.UTC)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	type serviceCycle struct{ serviceDate, returnDate string }
 	last := map[string]serviceCycle{}
 	consider := func(customerID, applianceID, value, returnDate string) {
@@ -54,7 +54,7 @@ func BuildPreventiveAlertsWithDefault(customers []AlertCustomer, appliances []Al
 			return
 		}
 		key := customerID + "|" + applianceID
-		if existing, ok := last[key]; !ok || d > existing.serviceDate {
+		if existing, ok := last[key]; !ok || d > existing.serviceDate || (d == existing.serviceDate && existing.returnDate == "" && alertISODate(returnDate) != "") {
 			last[key] = serviceCycle{serviceDate: d, returnDate: alertISODate(returnDate)}
 		}
 	}
@@ -101,7 +101,7 @@ func BuildPreventiveAlertsWithDefault(customers []AlertCustomer, appliances []Al
 		if err != nil {
 			continue
 		}
-		expected := date.AddDate(0, months, 0)
+		expected := AddMonthsClamped(date, months)
 		if cycle.returnDate != "" {
 			if custom, parseErr := time.Parse("2006-01-02", cycle.returnDate); parseErr == nil {
 				expected = custom
@@ -204,3 +204,4 @@ func nonEmptyAlertParts(parts ...string) []string {
 	}
 	return out
 }
+
