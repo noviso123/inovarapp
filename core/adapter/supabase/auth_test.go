@@ -80,6 +80,24 @@ func TestSignInWithPasswordUsesAnonKeyAndReturnsCompatibleSession(t *testing.T) 
 	}
 }
 
+func TestPublicAuthRequestDoesNotUsePublishableKeyAsBearer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("apikey"); got != "sb_publishable_test" {
+			t.Errorf("apikey = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "" {
+			t.Errorf("publishable API key must not be sent as a bearer token; authorization = %q", got)
+		}
+		_, _ = io.WriteString(w, `{"access_token":"access","refresh_token":"refresh","token_type":"bearer","expires_in":3600,"user":{"id":"user-1"}}`)
+	}))
+	defer server.Close()
+
+	client := testClient(t, server.URL, "sb_publishable_test", "sb_secret_test")
+	if _, err := client.SignInWithPassword(context.Background(), "user@example.com", "password"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSignInWithPasswordPreservesSupabaseAuthError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -335,3 +353,4 @@ func TestAuthErrorParsingDoesNotExposeResponseBodyWhenMalformed(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
