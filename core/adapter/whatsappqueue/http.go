@@ -164,7 +164,7 @@ func queueDependencyFailure(w http.ResponseWriter, resource, stage string, resul
 	case err != nil:
 		message = "Não foi possível alcançar o Supabase ao consultar " + resource + ". Verifique a disponibilidade do banco e a URL configurada no Vercel."
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
-		message = "O Supabase recusou o acesso a " + resource + ". Confirme se SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY pertencem ao mesmo projeto."
+		message = "O Supabase recusou o acesso a " + resource + ". Confirme se SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_SECRET_KEY) pertencem ao mesmo projeto."
 	case status == http.StatusNotFound:
 		message = "O recurso do Supabase necessário para " + resource + " não foi encontrado (HTTP 404). Aplique as migrações no projeto usado pelo Vercel e atualize o cache da API."
 	default:
