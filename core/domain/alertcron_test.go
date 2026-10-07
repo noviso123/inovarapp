@@ -40,3 +40,31 @@ func TestBuildAgendaReminderUsesServiceLabelAndEquipmentFallback(t *testing.T) {
 		t.Fatalf("agenda equipment=%q", got)
 	}
 }
+
+func TestPreventiveCycleHonorsConfiguredMonthsAndMonthEnd(t *testing.T) {
+	for _, tc := range []struct {
+		months    int
+		last, due string
+	}{
+		{2, "2026-07-31", "2026-09-30"},
+		{3, "2026-01-31", "2026-04-30"},
+		{0, "2026-01-31", "2026-04-30"},
+	} {
+		now, _ := time.Parse("2006-01-02", tc.due)
+		got := BuildPreventiveAlerts([]AlertCustomer{{ID: "c", Active: true}}, []AlertAppliance{{ID: "a", CustomerID: "c", LastMaintenance: tc.last}}, nil, nil, tc.months, 180, now)
+		if len(got) != 1 || got[0].ExpectedDate != tc.due || got[0].DaysToDue != 0 {
+			t.Fatalf("cycle %+v: got %+v", tc, got)
+		}
+	}
+}
+
+func TestPreventiveCycleKeepsExplicitReturnFromSameDayService(t *testing.T) {
+	got := BuildPreventiveAlerts([]AlertCustomer{{ID: "c", Active: true}}, []AlertAppliance{{ID: "a", CustomerID: "c", LastMaintenance: "2026-07-07"}},
+		[]AlertHistory{{CustomerID: "c", ApplianceID: "a", Date: "2026-07-07"}},
+		[]AlertService{{CustomerID: "c", ApplianceID: "a", Status: "CONCLUIDO", CompletionDate: "2026-07-07", Observations: "[PROXIMO_RETORNO:2026-09-07]"}},
+		3, 180, time.Date(2026, 9, 7, 23, 0, 0, 0, time.UTC))
+	if len(got) != 1 || got[0].ExpectedDate != "2026-09-07" || got[0].DaysToDue != 0 {
+		t.Fatalf("explicit cycle lost: %+v", got)
+	}
+}
+
