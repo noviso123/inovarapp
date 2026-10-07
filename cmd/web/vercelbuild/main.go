@@ -120,6 +120,13 @@ func wasmBuildEnvironment(current []string) []string {
 }
 
 func validateExportedBundle(output string) error {
+	css, err := os.ReadFile(filepath.Join(output, "web", "inovar.css"))
+	if err != nil {
+		return err
+	}
+	if !bytes.HasPrefix(bytes.TrimSpace(css), []byte(":root {")) || bytes.Contains(css, []byte("Warning: truncated output")) {
+		return fmt.Errorf("frontend stylesheet is incomplete or contains truncated tool output")
+	}
 	for _, name := range []string{
 		"index.html", "app.css", "app.js", "wasm_exec.js", "manifest.webmanifest", "app-worker.js",
 		"web/app.wasm", "web/inovar.css", "web/clean-auth-query.js", "web/icon-192.png", "web/icon-512.png", "favicon.ico",
