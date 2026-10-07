@@ -44,17 +44,9 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 	}
 
 	modeOptions := []app.UI{
-		app.Option().Value(teamQRCodeContact).Selected(p.teamQRCodeMode == teamQRCodeContact).Body(app.Text("Cartão de contato da empresa")),
 		app.Option().Value(teamQRCodeWhatsApp).Selected(p.teamQRCodeMode == teamQRCodeWhatsApp).Body(app.Text("Abrir WhatsApp comercial")),
 		app.Option().Value(teamQRCodeSite).Selected(p.teamQRCodeMode == teamQRCodeSite).Body(app.Text("Abrir o site do InovarApp")),
 		app.Option().Value(teamQRCodeCustom).Selected(p.teamQRCodeMode == teamQRCodeCustom).Body(app.Text("Link ou texto personalizado")),
-	}
-	var settingsHint app.UI = app.Div()
-	if strings.TrimSpace(p.teamProfile.Phone) == "" || strings.TrimSpace(p.teamProfile.BusinessName) == "" {
-		settingsHint = app.Div().Class("team-qr__profile-hint").Body(
-			app.P().Class("team-qr__hint").Body(app.Text("O cartão usa os dados cadastrados em Configurações do app. Complete o nome da empresa e o WhatsApp para gerar um contato completo.")),
-			app.Button().Class("auth-link").Type("button").OnClick(p.openTeamSettings).Body(app.Text("Completar dados da empresa")),
-		)
 	}
 
 	configuration := []app.UI{
@@ -83,8 +75,6 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			),
 			app.P().Class("team-qr__hint").Body(app.Text("Para cartões, prefira um link curto e público. Textos longos deixam o QR mais denso e podem ser mais difíceis de ler.")),
 		)
-	} else {
-		configuration = append(configuration, settingsHint)
 	}
 	configuration = append(configuration,
 		app.Button().Class("auth-submit team-qr__generate").Type("button").OnClick(p.generateTeamQRCodeClick).Body(app.Text("Gerar / atualizar QR Code")),
@@ -112,14 +102,13 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Div().Body(
 				app.P().Class("catalog__eyebrow").Body(app.Text("MATERIAL DE DIVULGAÇÃO")),
 				app.H2().Class("catalog__title").Body(app.Text("QR Code da empresa")),
-				app.P().Class("portal-section__intro").Body(app.Text("Gere um código nítido para cartões, adesivos e materiais da empresa. Escolha se a leitura abre o contato, o WhatsApp, o site ou um endereço personalizado.")),
+				app.P().Class("portal-section__intro").Body(app.Text("Gere um código nítido para cartões, adesivos e materiais da empresa. Escolha se a leitura abre o WhatsApp, o site ou um endereço personalizado.")),
 			),
 		),
 		app.Div().Class("team-qr__layout").Body(
 			app.Div().Class("team-qr__configuration").Body(
 				app.H3().Body(app.Text("Configurar destino")),
 				app.Div().Class("team-qr__fields").Body(configuration...),
-				app.P().Class("team-qr__hint").Body(app.Text("O modo contato inclui nome, telefone, endereço e site disponíveis nas configurações da empresa.")),
 			),
 			app.Div().Class("team-qr__preview").Body(previewContent...),
 		),
@@ -356,4 +345,3 @@ func normalizeBusinessPhone(value string) string {
 	}
 	return phone
 }
-
