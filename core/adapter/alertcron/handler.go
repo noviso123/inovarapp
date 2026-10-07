@@ -158,6 +158,9 @@ func (h Handler) runDaily(ctx context.Context, now time.Time) (map[string]any, e
 	if err != nil {
 		return nil, err
 	}
+	if err := h.syncMaintenanceRows(ctx, now, customers, appliances, histories, completed, config); err != nil {
+		return nil, err
+	}
 	profileEmail := map[string]string{}
 	for _, profile := range profiles {
 		profileEmail[profile.ID] = profile.Email
