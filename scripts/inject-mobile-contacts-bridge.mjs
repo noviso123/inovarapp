@@ -5,10 +5,11 @@ if (!htmlPath) throw new Error('Informe o caminho do index.html exportado.');
 const html = await readFile(htmlPath, 'utf8');
 const bootstrapMarker = '<script type="module" data-inovar-mobile-bootstrap>';
 if (html.includes(bootstrapMarker)) process.exit(0);
-const wasmRuntime = '<script defer src="/wasm_exec.js"></script>';
-const appRuntime = '<script defer src="/app.js"></script>';
-if (!html.includes(wasmRuntime) || !html.includes(appRuntime)) {
-  throw new Error('Bootstrap WebAssembly não encontrado no HTML exportado.');
+const wasmRuntime = html.match(/<script\b(?=[^>]*\bsrc=["']\/wasm_exec\.js(?:\?[^"']*)?["'])[^>]*>\s*<\/script>/i)?.[0];
+const appRuntime = html.match(/<script\b(?=[^>]*\bsrc=["']\/app\.js(?:\?[^"']*)?["'])[^>]*>\s*<\/script>/i)?.[0];
+if (!wasmRuntime || !appRuntime) {
+  const scripts = html.match(/<script\b[^>]*>/gi)?.join('\n') || '(nenhuma tag script encontrada)';
+  throw new Error(`Bootstrap WebAssembly não encontrado no HTML exportado. Scripts encontrados:\n${scripts}`);
 }
 const bootstrap = `${bootstrapMarker}
       import('/native-contacts.js')
@@ -30,6 +31,6 @@ const bootstrap = `${bootstrapMarker}
         }))
         .catch((error) => console.error('Falha ao iniciar o app Go móvel.', error));
     </script>`;
-const updated = html.replace(`${wasmRuntime}\n    ${appRuntime}`, bootstrap);
+const updated = html.replace(wasmRuntime, '').replace(appRuntime, bootstrap);
 if (updated === html) throw new Error('Não foi possível substituir a sequência de inicialização do WASM.');
 await writeFile(htmlPath, updated, 'utf8');
