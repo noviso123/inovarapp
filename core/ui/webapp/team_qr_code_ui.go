@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"net/url"
 	"strings"
 
 	"github.com/maxence-charriere/go-app/v11/pkg/app"
@@ -31,7 +32,9 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 		return app.Div()
 	}
 	if p.teamQRCodeMode == "" {
-		p.teamQRCodeMode = teamQRCodeContact
+		p.teamQRCodeMode = teamQRCodeWhatsApp
+		p.teamQRCodePhone = p.teamProfile.Phone
+		p.teamQRCodeMessage = "Olá! Gostaria de agendar um atendimento com a Inovar Refrigeração."
 	}
 	if p.teamQRCodeCustom == "" {
 		p.teamQRCodeCustom = teamQRCodeSiteURL
@@ -60,7 +63,19 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Select().Attr("value", p.teamQRCodeMode).OnChange(p.changeTeamQRCodeMode).Body(modeOptions...),
 		),
 	}
-	if p.teamQRCodeMode == teamQRCodeCustom {
+	if p.teamQRCodeMode == teamQRCodeWhatsApp {
+		configuration = append(configuration,
+			app.Label().Class("auth-field").Body(
+				app.Text("Número do WhatsApp da empresa"),
+				app.Input().Type("tel").Value(p.teamQRCodePhone).Placeholder("Ex.: (27) 99999-9999").OnChange(p.changeTeamQRCodePhone),
+			),
+			app.Label().Class("auth-field").Body(
+				app.Text("Mensagem inicial (opcional)"),
+				app.Textarea().Rows(4).Text(p.teamQRCodeMessage).Placeholder("Olá! Gostaria de agendar uma manutenção.").OnChange(p.changeTeamQRCodeMessage),
+			),
+			app.P().Class("team-qr__hint").Body(app.Text("Informe o número com DDD. Para outro país, inclua o código do país. Ao ler o QR, a conversa abre com a mensagem preenchida; o cliente confirma o envio no WhatsApp.")),
+		)
+	} else if p.teamQRCodeMode == teamQRCodeCustom {
 		configuration = append(configuration,
 			app.Label().Class("auth-field").Body(
 				app.Text("Endereço ou texto"),
@@ -140,6 +155,9 @@ func (p *serviceCatalogPage) generateTeamQRCodeClick(ctx app.Context, event app.
 
 func (p *serviceCatalogPage) generateTeamQRCode() {
 	content, err := teamQRCodePayload(p.teamQRCodeMode, p.teamQRCodeCustom, p.teamProfile)
+	if p.teamQRCodeMode == teamQRCodeWhatsApp {
+		content, err = teamQRCodeWhatsAppPayload(p.teamQRCodePhone, p.teamQRCodeMessage)
+	}
 	if err != nil {
 		p.teamQRCodePNG, p.teamQRCodeSVG, p.teamQRCodePayload = "", "", ""
 		p.teamQRCodeError = err.Error()
@@ -169,6 +187,36 @@ func (p *serviceCatalogPage) generateTeamQRCode() {
 	p.teamQRCodeSVG = svg
 	p.teamQRCodePNG = "data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBytes)
 	p.teamQRCodeError = ""
+}
+
+func (p *serviceCatalogPage) changeTeamQRCodePhone(ctx app.Context, event app.Event) {
+	if !p.canUseTeamQRCode() {
+		return
+	}
+	p.teamQRCodePhone = event.Get("target").Get("value").String()
+	p.generateTeamQRCode()
+	ctx.Update()
+}
+
+func (p *serviceCatalogPage) changeTeamQRCodeMessage(ctx app.Context, event app.Event) {
+	if !p.canUseTeamQRCode() {
+		return
+	}
+	p.teamQRCodeMessage = event.Get("target").Get("value").String()
+	p.generateTeamQRCode()
+	ctx.Update()
+}
+
+func teamQRCodeWhatsAppPayload(number, message string) (string, error) {
+	phone := normalizeBusinessPhone(number)
+	if len(phone) < 10 || len(phone) > 15 {
+		return "", fmt.Errorf("Informe um número válido do WhatsApp com DDD e, para outro país, o código do país.")
+	}
+	link := "https://wa.me/" + phone
+	if text := strings.TrimSpace(message); text != "" {
+		link += "?" + url.Values{"text": {text}}.Encode()
+	}
+	return link, nil
 }
 
 func teamQRCodePayload(mode, custom string, profile domain.TechnicianProfile) (string, error) {
@@ -308,4 +356,3 @@ func normalizeBusinessPhone(value string) string {
 	}
 	return phone
 }
-
