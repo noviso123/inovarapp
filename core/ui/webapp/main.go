@@ -303,7 +303,14 @@ func (p *serviceCatalogPage) Render() app.UI {
 
 	workspace := make([]app.UI, 0, 3)
 	if p.offlineMode {
-		workspace = append(workspace, app.Div().Class("auth-notice").Body(app.Text("Sem conexão: mostrando os últimos dados salvos desta conta. Cadastros, edições/exclusões de clientes, aparelhos, ordens, agenda, orçamentos e ajustes de perfil/mensagens compatíveis ficam na fila e sincronizam ao reconectar; anexos, contas de acesso e integrações externas precisam de internet.")))
+		workspace = append(workspace, app.Div().Class("auth-notice").Attr("role", "status").Body(
+			app.P().Body(app.Text("Não foi possível confirmar a conexão com o sistema. Mostrando os últimos dados salvos desta conta. Alterações compatíveis ficam pendentes até a sessão ser validada; novos cadastros, anexos e integrações precisam de conexão.")),
+			app.Button().Class("auth-link").Type("button").OnClick(func(ctx app.Context, event app.Event) {
+				event.PreventDefault()
+				p.restoreSession(ctx)
+				ctx.Update()
+			}).Body(app.Text("Tentar reconectar")),
+		))
 	}
 	if p.authNotice != "" {
 		workspace = append(workspace, app.Div().Class("auth-notice").Body(app.Text(p.authNotice)))
