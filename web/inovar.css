@@ -2724,3 +2724,17 @@ body { background: #071124; }
   .inovar-app .team-budget-finance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inovar-app .team-budget-finance > .auth-field { grid-column: 1 / -1; }
 }
+
+/* Finance period picker containment and consistent section spacing. */
+.inovar-app #team-finance > .team-finance__page-heading { gap: 16px; margin-bottom: 16px; }
+.inovar-app .team-finance__heading-controls, .inovar-app .team-finance__heading-controls > .auth-field { box-sizing: border-box; min-width: 0; max-width: 100%; }
+.inovar-app .team-finance__heading-controls { display: grid; gap: 12px; }
+.inovar-app .team-finance__heading-controls > .auth-field { margin: 0; gap: 8px; }
+.inovar-app .team-finance__heading-controls input[type="month"] { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-inline-size: 0; padding: 10px 12px; font-size: 16px; }
+.inovar-app .team-finance__heading-controls input[type="month"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+.inovar-app #team-finance > :is(.team-finance__metrics,.team-finance-pix,.team-finance-section) { margin-block: 16px; }
+.inovar-app .team-finance-section__heading { gap: 12px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .inovar-app #team-finance > .team-finance__page-heading { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .inovar-app .team-finance__heading-controls { width: 100%; }
+}
