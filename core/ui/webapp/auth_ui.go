@@ -125,6 +125,13 @@ func (p *serviceCatalogPage) OnMount(ctx app.Context) {
 	}
 	registerOfflineOnlineCallback(func() {
 		ctx.Dispatch(func(next app.Context) {
+			if p.session != nil && p.offlineMode {
+				p.restoreSession(next)
+				next.Update()
+				if p.offlineMode {
+					return
+				}
+			}
 			if p.session == nil || p.caller == nil || !hasPendingOfflineTeamMutations(p.caller.UserID) {
 				return
 			}
@@ -236,7 +243,7 @@ func (p *serviceCatalogPage) restoreOfflineAccount(ctx app.Context, userID, toke
 		}
 		p.offlineMode = true
 		p.caller = &supabase.Caller{UserID: userID, Role: snapshot.Role, Token: token}
-		p.authNotice = "A sessão não pôde ser conferida sem conexão. Dados locais estão em modo somente leitura; reconecte para validar a conta."
+		p.authNotice = ""
 		if snapshot.Role == domain.RoleCustomer {
 			p.portalData, p.portalLoadedFor = snapshot.PortalData, userID
 		} else {
