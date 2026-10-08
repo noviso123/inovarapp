@@ -21,7 +21,10 @@ type ServicesHandler struct {
 	ScheduleMaintenance MaintenanceScheduler
 }
 
-type AppointmentsHandler struct{ Supabase *supabase.Client }
+type AppointmentsHandler struct {
+	Supabase            *supabase.Client
+	ScheduleMaintenance MaintenanceScheduler
+}
 
 type resourceMutation struct {
 	ID        string                     `json:"id"`
@@ -253,7 +256,9 @@ func (h AppointmentsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		forwardUserResource(w, r, h.Supabase, "/rest/v1/appointments", http.MethodPost, fields, "", true)
+		if forwardUserResource(w, r, h.Supabase, "/rest/v1/appointments", http.MethodPost, fields, "", true) {
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
+		}
 	case http.MethodPatch, http.MethodPut:
 		if !isTeamRole(caller.Role) {
 			writeResourceJSON(w, http.StatusForbidden, map[string]string{"error": "Somente a equipe pode alterar agendamentos"})
@@ -267,7 +272,9 @@ func (h AppointmentsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeResourceJSON(w, http.StatusBadRequest, map[string]string{"error": "Agendamento não informado"})
 			return
 		}
-		forwardUserResource(w, r, h.Supabase, resourceByID("appointments", "service_id", mutation.ServiceID), http.MethodPatch, mutation.Fields, "", true)
+		if forwardUserResource(w, r, h.Supabase, resourceByID("appointments", "service_id", mutation.ServiceID), http.MethodPatch, mutation.Fields, "", true) {
+			syncMaintenanceAfterMutation(r.Context(), h.ScheduleMaintenance)
+		}
 	default:
 		writeResourceJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "Método não permitido"})
 	}
