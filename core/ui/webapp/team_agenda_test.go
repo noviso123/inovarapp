@@ -3,6 +3,7 @@ package webapp
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/maxence-charriere/go-app/v11/pkg/app"
 )
@@ -101,8 +102,9 @@ func TestTeamOperationsShowsSpecificRecoverableDatabaseLoadError(t *testing.T) {
 }
 
 func TestTeamAgendaSummaryAndCardPreserveReactDetails(t *testing.T) {
+	futureDate := time.Now().AddDate(0, 0, 7).Format("2006-01-02")
 	page := &serviceCatalogPage{teamServices: []map[string]any{
-		{"id": "upcoming", "status": "AGENDADO", "data_agendamento": "2026-10-07"},
+		{"id": "upcoming", "status": "AGENDADO", "data_agendamento": futureDate},
 		{"id": "done", "status": "CONCLUIDO", "data_agendamento": "2026-10-05"},
 	}, teamActiveSection: "calendar"}
 	markup := app.HTMLString(page.teamOperationsSection())
