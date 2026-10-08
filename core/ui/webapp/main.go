@@ -83,6 +83,7 @@ type serviceCatalogPage struct {
 	teamQRCodeCustom                  string
 	teamQRCodePayload                 string
 	teamQRCodePNG                     string
+	teamQRCodeDownload                string
 	teamQRCodeSVG                     string
 	teamQRCodeError                   string
 	teamNavOpen                       bool
