@@ -14,6 +14,10 @@ import (
 func TestFutureMaintenanceIsPersistedAtNineInBrasilia(t *testing.T) {
 	var queued map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/rest/v1/services" {
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
 		if r.URL.Path != "/rest/v1/rpc/schedule_maintenance_whatsapp" {
 			t.Errorf("unexpected path %s", r.URL.Path)
 			w.WriteHeader(404)
