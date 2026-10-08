@@ -1383,7 +1383,7 @@ func (p *serviceCatalogPage) teamFinancePanel() app.UI {
 	})).Body(app.Text(pixLabel))
 	pixActions := []app.UI{pixButton}
 	content := []app.UI{
-		app.Div().Class("catalog__heading team-finance__page-heading").Body(app.Div().Body(app.P().Class("catalog__eyebrow").Body(app.Text("FINANCEIRO")), app.H2().Class("catalog__title").Body(app.Text("Financeiro")), app.P().Class("portal-section__intro").Body(app.Text("Tudo que entrou, o que falta receber e o que atrasou"))), app.Div().Class("team-finance__heading-controls").Body(app.Label().Class("auth-field").Body(app.Text("Período"), app.Input().Type("month").Value(month).OnChange(p.ValueTo(&p.teamFinanceMonth))), app.Button().Class("auth-link team-finance__history-toggle").Type("button").OnClick(func(ctx app.Context, event app.Event) {
+		app.Div().Class("catalog__heading team-finance__page-heading").Body(app.Div().Body(app.P().Class("catalog__eyebrow").Body(app.Text("FINANCEIRO")), app.H2().Class("catalog__title").Body(app.Text("Financeiro")), app.P().Class("portal-section__intro").Body(app.Text("Tudo que entrou, o que falta receber e o que atrasou"))), app.Div().Class("team-finance__heading-controls").Body(app.Label().Class("auth-field").Body(app.Text("Período"), p.compactMonthPicker(month, &p.teamFinanceMonth)), app.Button().Class("auth-link team-finance__history-toggle").Type("button").OnClick(func(ctx app.Context, event app.Event) {
 			event.PreventDefault()
 			p.teamFinanceAll = !p.teamFinanceAll
 			ctx.Update()
