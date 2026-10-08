@@ -142,7 +142,7 @@ func (p *serviceCatalogPage) detailedTeamBudgetsPanel() app.UI {
 		app.Article().Class("portal-service").Body(app.P().Class("catalog__eyebrow").Body(app.Text("Faturamento aprovado")), app.Strong().Class("catalog__title").Body(app.Text(fmt.Sprintf("R$ %.2f", approvedValue)))),
 	}
 	finance := []app.UI{
-		app.Label().Class("auth-field").Body(app.Text("Financeiro do mês"), app.Input().Type("month").Value(month).OnChange(p.ValueTo(&p.teamBudgetMonth))),
+		app.Label().Class("auth-field").Body(app.Text("Financeiro do mês"), p.compactMonthPicker(month, &p.teamBudgetMonth)),
 		app.Article().Class("portal-service").Body(app.P().Class("catalog__eyebrow").Body(app.Text("Recebido no mês")), app.Strong().Body(app.Text(fmt.Sprintf("R$ %.2f", monthly.Received)))),
 		app.Article().Class("portal-service").Body(app.P().Class("catalog__eyebrow").Body(app.Text("A receber (aprovados)")), app.Strong().Body(app.Text(fmt.Sprintf("R$ %.2f", receivable)))),
 		app.Article().Class("portal-service").Body(app.P().Class("catalog__eyebrow").Body(app.Text("Emitido no mês")), app.Strong().Body(app.Text(fmt.Sprintf("R$ %.2f", monthly.Issued)))),
