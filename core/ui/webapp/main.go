@@ -302,7 +302,8 @@ func (p *serviceCatalogPage) Render() app.UI {
 	header := app.Header().Class(headerClass).Body(headerItems...)
 
 	workspace := make([]app.UI, 0, 3)
-	if p.offlineMode {
+	localQRCode := isTeam && p.teamActiveSection == "qr-code"
+	if p.offlineMode && !localQRCode {
 		workspace = append(workspace, app.Div().Class("auth-notice").Attr("role", "status").Body(
 			app.P().Body(app.Text("Não foi possível confirmar a conexão com o sistema. Mostrando os últimos dados salvos desta conta. Alterações compatíveis ficam pendentes até a sessão ser validada; novos cadastros, anexos e integrações precisam de conexão.")),
 			app.Button().Class("auth-link").Type("button").OnClick(func(ctx app.Context, event app.Event) {
@@ -312,7 +313,7 @@ func (p *serviceCatalogPage) Render() app.UI {
 			}).Body(app.Text("Tentar reconectar")),
 		))
 	}
-	if p.authNotice != "" {
+	if p.authNotice != "" && !(localQRCode && p.offlineMode) {
 		workspace = append(workspace, app.Div().Class("auth-notice").Body(app.Text(p.authNotice)))
 	}
 	if !isTeam {
