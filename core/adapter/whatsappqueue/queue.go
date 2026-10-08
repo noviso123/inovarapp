@@ -109,6 +109,9 @@ func Enqueue(ctx context.Context, db *supabase.Client, input EnqueueInput) error
 	if input.EventType == "lembrete_manutencao_recorrente" {
 		path = "/rest/v1/rpc/schedule_maintenance_whatsapp"
 		requestBody = map[string]any{"p_payload": payload}
+	} else if input.EventType == "lembrete_agendamento_vespera" || input.EventType == "lembrete_agendamento_uma_hora" {
+		path = "/rest/v1/rpc/schedule_appointment_whatsapp"
+		requestBody = map[string]any{"p_payload": payload}
 	}
 	result, err := db.ServiceRequest(ctx, path, supabase.RequestOptions{
 		Method: http.MethodPost, Body: requestBody,
