@@ -36,48 +36,22 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 		p.teamQRCodePhone = p.teamProfile.Phone
 		p.teamQRCodeMessage = "Olá! Gostaria de agendar um atendimento com a Inovar Refrigeração."
 	}
-	if p.teamQRCodeCustom == "" {
-		p.teamQRCodeCustom = teamQRCodeSiteURL
-	}
-	if p.teamQRCodePNG == "" && p.teamQRCodeError == "" {
-		p.generateTeamQRCode()
-	}
+	p.teamQRCodeMode = teamQRCodeWhatsApp
 
-	modeOptions := []app.UI{
-		app.Option().Value(teamQRCodeWhatsApp).Selected(p.teamQRCodeMode == teamQRCodeWhatsApp).Body(app.Text("Abrir WhatsApp comercial")),
-		app.Option().Value(teamQRCodeSite).Selected(p.teamQRCodeMode == teamQRCodeSite).Body(app.Text("Abrir o site do InovarApp")),
-		app.Option().Value(teamQRCodeCustom).Selected(p.teamQRCodeMode == teamQRCodeCustom).Body(app.Text("Link ou texto personalizado")),
-	}
-
-	configuration := []app.UI{
-		app.Label().Class("auth-field").Body(
-			app.Text("O que o QR Code vai abrir"),
-			app.Select().Attr("value", p.teamQRCodeMode).OnChange(p.changeTeamQRCodeMode).Body(modeOptions...),
-		),
-	}
-	if p.teamQRCodeMode == teamQRCodeWhatsApp {
-		configuration = append(configuration,
-			app.Label().Class("auth-field").Body(
-				app.Text("Número do WhatsApp da empresa"),
-				app.Input().Type("tel").Value(p.teamQRCodePhone).Placeholder("Ex.: (27) 99999-9999").OnChange(p.changeTeamQRCodePhone),
-			),
-			app.Label().Class("auth-field").Body(
-				app.Text("Mensagem inicial (opcional)"),
-				app.Textarea().Rows(4).Text(p.teamQRCodeMessage).Placeholder("Olá! Gostaria de agendar uma manutenção.").OnChange(p.changeTeamQRCodeMessage),
-			),
-			app.P().Class("team-qr__hint").Body(app.Text("Informe o número com DDD. Para outro país, inclua o código do país. Ao ler o QR, a conversa abre com a mensagem preenchida; o cliente confirma o envio no WhatsApp.")),
-		)
-	} else if p.teamQRCodeMode == teamQRCodeCustom {
-		configuration = append(configuration,
-			app.Label().Class("auth-field").Body(
-				app.Text("Endereço ou texto"),
-				app.Input().Type("text").Value(p.teamQRCodeCustom).Placeholder("https://seusite.com/ ou uma mensagem").OnChange(p.changeTeamQRCodeCustom),
-			),
-			app.P().Class("team-qr__hint").Body(app.Text("Para cartões, prefira um link curto e público. Textos longos deixam o QR mais denso e podem ser mais difíceis de ler.")),
-		)
-	}
+	configuration := []app.UI{}
 	configuration = append(configuration,
-		app.Button().Class("auth-submit team-qr__generate").Type("button").OnClick(p.generateTeamQRCodeClick).Body(app.Text("Gerar / atualizar QR Code")),
+		app.Label().Class("auth-field").Body(
+			app.Text("Número do WhatsApp da empresa"),
+			app.Input().Type("tel").Value(p.teamQRCodePhone).Placeholder("Ex.: (27) 99999-9999").OnChange(p.changeTeamQRCodePhone),
+		),
+		app.Label().Class("auth-field").Body(
+			app.Text("Mensagem inicial (opcional)"),
+			app.Textarea().Rows(4).Text(p.teamQRCodeMessage).Placeholder("Olá! Gostaria de agendar uma manutenção.").OnChange(p.changeTeamQRCodeMessage),
+		),
+		app.P().Class("team-qr__hint").Body(app.Text("Informe o número com DDD. Para outro país, inclua o código do país. Ao ler o QR, a conversa abre com a mensagem preenchida; o cliente confirma o envio no WhatsApp.")),
+	)
+	configuration = append(configuration,
+		app.Button().Class("auth-submit team-qr__generate").Type("button").OnClick(p.generateTeamQRCodeClick).Body(app.Text("Gerar QR Code")),
 	)
 
 	previewContent := []app.UI{
@@ -90,10 +64,9 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Img().Class("team-qr__image").Src(p.teamQRCodePNG).Alt("QR Code de alta resolução da Inovar Refrigeração"),
 			app.P().Class("team-qr__scan-note").Body(app.Text("Alto contraste, margem de leitura preservada e sem elementos sobre o código.")),
 			app.Div().Class("team-qr__downloads").Body(
-				app.A().Class("auth-submit team-qr__download").Href(teamQRCodeDataURL("image/svg+xml", p.teamQRCodeSVG)).Attr("download", teamQRCodeFilename(p.teamQRCodeMode, "svg")).Body(app.Text("Baixar SVG para impressão")),
-				app.A().Class("auth-link team-qr__download").Href(p.teamQRCodePNG).Attr("download", teamQRCodeFilename(p.teamQRCodeMode, "png")).Body(app.Text("Baixar PNG em alta resolução")),
+				app.A().Class("auth-submit team-qr__download").Href(p.teamQRCodePNG).Attr("download", teamQRCodeFilename(p.teamQRCodeMode, "png")).Body(app.Text("Baixar PNG em alta resolução")),
 			),
-			app.P().Class("team-qr__hint").Body(app.Text("SVG é vetorial e mantém nitidez em qualquer tamanho. O PNG é gerado com cerca de 2.200 px para uso digital e impressão.")),
+			app.P().Class("team-qr__hint").Body(app.Text("PNG em alta resolução para uso digital e impressão.")),
 		)
 	}
 
@@ -102,12 +75,12 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Div().Body(
 				app.P().Class("catalog__eyebrow").Body(app.Text("MATERIAL DE DIVULGAÇÃO")),
 				app.H2().Class("catalog__title").Body(app.Text("QR Code da empresa")),
-				app.P().Class("portal-section__intro").Body(app.Text("Gere e baixe seu QR Code temporário. O código é preparado neste dispositivo, sem salvar no banco e sem precisar de conexão para gerar ou baixar. Escolha WhatsApp, site ou um endereço personalizado.")),
+				app.P().Class("portal-section__intro").Body(app.Text("Gere e baixe seu QR Code temporário. O código é preparado neste dispositivo, sem salvar no banco e sem precisar de conexão para gerar ou baixar. Informe o número do WhatsApp, gere e baixe o PNG.")),
 			),
 		),
 		app.Div().Class("team-qr__layout").Body(
 			app.Div().Class("team-qr__configuration").Body(
-				app.H3().Body(app.Text("Configurar destino")),
+				app.H3().Body(app.Text("WhatsApp")),
 				app.Div().Class("team-qr__fields").Body(configuration...),
 			),
 			app.Div().Class("team-qr__preview").Body(previewContent...),
@@ -143,10 +116,7 @@ func (p *serviceCatalogPage) generateTeamQRCodeClick(ctx app.Context, event app.
 }
 
 func (p *serviceCatalogPage) generateTeamQRCode() {
-	content, err := teamQRCodePayload(p.teamQRCodeMode, p.teamQRCodeCustom, p.teamProfile)
-	if p.teamQRCodeMode == teamQRCodeWhatsApp {
-		content, err = teamQRCodeWhatsAppPayload(p.teamQRCodePhone, p.teamQRCodeMessage)
-	}
+	content, err := teamQRCodeWhatsAppPayload(p.teamQRCodePhone, p.teamQRCodeMessage)
 	if err != nil {
 		p.teamQRCodePNG, p.teamQRCodeSVG, p.teamQRCodePayload = "", "", ""
 		p.teamQRCodeError = err.Error()
