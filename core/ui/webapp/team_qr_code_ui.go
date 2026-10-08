@@ -64,9 +64,10 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Img().Class("team-qr__image").Src(p.teamQRCodePNG).Alt("QR Code de alta resolução da Inovar Refrigeração"),
 			app.P().Class("team-qr__scan-note").Body(app.Text("Alto contraste, margem de leitura preservada e sem elementos sobre o código.")),
 			app.Div().Class("team-qr__downloads").Body(
-				app.A().Class("auth-submit team-qr__download").Href(p.teamQRCodePNG).Attr("download", teamQRCodeFilename(p.teamQRCodeMode, "png")).Body(app.Text("Baixar PNG em alta resolução")),
+				app.A().Class("auth-submit team-qr__download").Href(p.teamQRCodeDownload).Attr("download", teamQRCodeFilename(p.teamQRCodeMode, "png")).Body(app.Text("Baixar PNG em alta resolução")),
+				app.A().Class("auth-link team-qr__download").Href(p.teamQRCodeDownload).Target("_blank").Rel("noopener").Body(app.Text("Abrir PNG para salvar")),
 			),
-			app.P().Class("team-qr__hint").Body(app.Text("PNG em alta resolução para uso digital e impressão.")),
+			app.P().Class("team-qr__hint").Body(app.Text("PNG em alta resolução. Se o iPhone abrir a imagem em vez de baixar, use Compartilhar e Salvar em Arquivos ou Salvar Imagem.")),
 		)
 	}
 
@@ -145,6 +146,8 @@ func (p *serviceCatalogPage) generateTeamQRCode() {
 	p.teamQRCodePayload = content
 	p.teamQRCodeSVG = svg
 	p.teamQRCodePNG = "data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBytes)
+	releaseQRCodeDownload(p.teamQRCodeDownload)
+	p.teamQRCodeDownload = prepareQRCodeDownload(pngBytes, p.teamQRCodePNG)
 	p.teamQRCodeError = ""
 }
 
