@@ -102,7 +102,7 @@ func (p *serviceCatalogPage) teamQRCodePanel() app.UI {
 			app.Div().Body(
 				app.P().Class("catalog__eyebrow").Body(app.Text("MATERIAL DE DIVULGAÇÃO")),
 				app.H2().Class("catalog__title").Body(app.Text("QR Code da empresa")),
-				app.P().Class("portal-section__intro").Body(app.Text("Gere um código nítido para cartões, adesivos e materiais da empresa. Escolha se a leitura abre o WhatsApp, o site ou um endereço personalizado.")),
+				app.P().Class("portal-section__intro").Body(app.Text("Gere e baixe seu QR Code temporário. O código é preparado neste dispositivo, sem salvar no banco e sem precisar de conexão para gerar ou baixar. Escolha WhatsApp, site ou um endereço personalizado.")),
 			),
 		),
 		app.Div().Class("team-qr__layout").Body(
