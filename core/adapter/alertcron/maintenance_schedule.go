@@ -74,5 +74,5 @@ func (h Handler) syncMaintenanceRows(ctx context.Context, now time.Time, custome
 			return err
 		}
 	}
-	return nil
+	return h.syncAppointmentRows(ctx, now, customers, appliances, config)
 }
