@@ -2712,3 +2712,15 @@ body { background: #071124; }
   .inovar-app--team .auth-dialog .team-confirm-dialog__actions { display: grid; grid-template-columns: minmax(0,1fr); }
   .inovar-app--team .auth-dialog :is(.portal-budget__actions,.auth-dialog__actions,.team-confirm-dialog__actions) > :is(button,a) { flex-basis: 100%; }
 }
+
+/* Budget month picker and filter spacing, including iOS intrinsic input sizing. */
+.inovar-app #team-budgets > .team-budget-finance { margin-block: 16px; gap: 14px; }
+.inovar-app .team-budget-finance > .auth-field { box-sizing: border-box; min-width: 0; max-width: 100%; gap: 8px; }
+.inovar-app .team-budget-finance > .auth-field > input[type="month"] { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-inline-size: 0; padding: 10px 12px; font-size: 16px; }
+.inovar-app .team-budget-finance input[type="month"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+.inovar-app #team-budgets > .portal-budget__actions:not([role="tablist"]) { margin-block: 16px; gap: 12px; }
+.inovar-app #team-budgets > .team-budget-list { margin-top: 16px; }
+@media (max-width: 640px) {
+  .inovar-app .team-budget-finance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inovar-app .team-budget-finance > .auth-field { grid-column: 1 / -1; }
+}
