@@ -459,7 +459,7 @@ func registerAPIHandlers(mux *http.ServeMux) {
 	mux.Handle("/api/orcamento-equipe", httpapi.TeamBudgetMutationHandler{Supabase: accountsClient})
 	mux.Handle("/api/aparelhos", httpapi.TeamAppliancesHandler{Supabase: accountsClient})
 	mux.Handle("/api/cliente/servicos", httpapi.CustomerServicesHandler{Supabase: accountsClient, Notifier: teamPushNotifier})
-	mux.Handle("/api/agendamentos", httpapi.AppointmentsHandler{Supabase: accountsClient})
+	mux.Handle("/api/agendamentos", httpapi.AppointmentsHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/api/historico", httpapi.ServiceHistoryHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/api/aparelho-manutencao", httpapi.ApplianceMaintenanceHandler{Supabase: accountsClient, ScheduleMaintenance: cronHandler.SyncMaintenance})
 	mux.Handle("/api/os-pdf", httpapi.ServiceOrderPDFHandler{
