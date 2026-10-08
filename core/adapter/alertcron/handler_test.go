@@ -68,9 +68,10 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 	var mu sync.Mutex
 	config := map[string]any{"lembrete_intervalo_dias": 7, "mensagensWhats": map[string]string{"lembrete_ciclo_vencido": "Oi {{cliente}} — {{meses}} meses", "lembrete_vespera": "Amanhã {{data}}"}}
 	var queuedWhats []string
+	queuedKeys := map[string]bool{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/rest/v1/whatsapp_message_queue", "/rest/v1/rpc/schedule_maintenance_whatsapp":
+		case "/rest/v1/whatsapp_message_queue", "/rest/v1/rpc/schedule_maintenance_whatsapp", "/rest/v1/rpc/schedule_appointment_whatsapp":
 			if r.Method == http.MethodPatch {
 				w.WriteHeader(http.StatusNoContent)
 				return
@@ -82,7 +83,10 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 			if payload, ok := message["p_payload"].(map[string]any); ok {
 				message = payload
 			}
-			queuedWhats = append(queuedWhats, fmt.Sprint(message["recipient_phone"])+"|"+fmt.Sprint(message["message_text"]))
+			if key := fmt.Sprint(message["idempotency_key"]); !queuedKeys[key] {
+				queuedKeys[key] = true
+				queuedWhats = append(queuedWhats, fmt.Sprint(message["recipient_phone"])+"|"+fmt.Sprint(message["message_text"]))
+			}
 			w.WriteHeader(http.StatusCreated)
 		case "/rest/v1/customers":
 			_, _ = io.WriteString(w, `[{"id":"customer-1","nome":"João Silva","whatsapp":"27999991234","profile_id":"11111111-1111-4111-8111-111111111111","ativo":true}]`)
@@ -149,10 +153,10 @@ func TestDailyAlertsPreserveReminderMessagesAndPersistThrottleLog(t *testing.T) 
 	if response.Code != http.StatusOK || result["ciclosVencidos"] != float64(1) || result["lembretesAgenda"] != float64(1) {
 		t.Fatalf("status=%d result=%#v body=%s", response.Code, result, response.Body.String())
 	}
-	if len(sentMail) != 2 || len(queuedWhats) != 2 {
+	if len(sentMail) != 2 || len(queuedWhats) != 3 {
 		t.Fatalf("mail=%d WhatsApp=%d", len(sentMail), len(queuedWhats))
 	}
-	if !strings.Contains(queuedWhats[0], "Oi João — 6 meses") || !strings.Contains(queuedWhats[1], "Amanhã 04/10/2026") {
+	if all := strings.Join(queuedWhats, "\n"); !strings.Contains(all, "Oi João — 6 meses") || !strings.Contains(all, "Amanhã 04/10/2026") {
 		t.Fatalf("sent WhatsApp=%#v", queuedWhats)
 	}
 	mu.Lock()
@@ -261,10 +265,13 @@ func TestHourlyAgendaWhatsAppSendsTemplateAndDeduplicates(t *testing.T) {
 	keys := map[string]bool{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/rest/v1/whatsapp_message_queue":
+		case "/rest/v1/whatsapp_message_queue", "/rest/v1/rpc/schedule_appointment_whatsapp":
 			var message map[string]any
 			if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
 				t.Error(err)
+			}
+			if payload, ok := message["p_payload"].(map[string]any); ok {
+				message = payload
 			}
 			if message["idempotency_key"] == "" || message["expires_at"] == nil {
 				t.Error("hourly reminder requires deduplication and expiry")
