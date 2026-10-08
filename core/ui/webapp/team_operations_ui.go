@@ -973,6 +973,9 @@ func (p *serviceCatalogPage) updateTeamService(ctx app.Context, serviceID string
 
 func (p *serviceCatalogPage) teamOperationsSection() app.UI {
 	view := p.teamActiveSection
+	if view == "qr-code" {
+		return app.Section().ID("team-operations").Class("team-view").Body(p.teamQRCodePanel())
+	}
 	if view == "" {
 		view = "dashboard"
 	}
